@@ -4,16 +4,6 @@
 
 #include "positioning.h"
 
-#define POINT_A_X (0.0f)
-#define POINT_A_Y (1.0f)
-
-#define POINT_B_X (3.0f)
-#define POINT_B_Y (0.0f)
-
-#define POINT_C_X (3.0f)
-#define POINT_C_Y (2.0f)
-
-
 // public function prototypes
 Position positioning_position_from_angles(float alpha, float beta, float gamma);
 // private function prototypes
