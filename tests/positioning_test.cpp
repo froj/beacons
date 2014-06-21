@@ -19,7 +19,7 @@ class Vec2D
         Vec2D(float x, float y) : _x(x), _y(y) {}
         float dot(const Vec2D & other) const;
         float length() const;
-        float angle_to(const Vec2D & other) const;
+        float directed_angle_to(const Vec2D & other) const;
         Angles angles_relative_to_triangle(const Triangle & t) const;
         Vec2D operator-(const Vec2D & other) const;
         bool operator==(const Vec2D & other) const;
@@ -76,12 +76,18 @@ float Vec2D::length() const
     return sqrt(_x*_x + _y*_y);
 }
 
-float Vec2D::angle_to(const Vec2D & other) const
+// see: http://stackoverflow.com/questions/21483999/using-atan2-to-find-angle-between-two-vectors
+float Vec2D::directed_angle_to(const Vec2D & other) const
 {
-    double cosine = dot(other) / (this->length() * other.length());
+    float angle = std::atan2(other._y, other._x) - std::atan2(_y, _x);
 
-    return std::acos(cosine);
+    if(angle < 0) {
+        return angle + 2 * M_PI;
+    } else {
+        return angle;
+    }
 }
+
 
 Vec2D Vec2D::operator-(const Vec2D & other) const
 {
@@ -90,14 +96,20 @@ Vec2D Vec2D::operator-(const Vec2D & other) const
 
 Angles Vec2D::angles_relative_to_triangle(const Triangle & t) const
 {
-    float alpha_ = (t.c - *this).angle_to(t.b - *this);
-    float beta_ =  (t.c - *this).angle_to(t.a - *this);
-    float gamma_ = (t.a - *this).angle_to(t.b - *this);
+    Vec2D PA = t.a - *this;
+    Vec2D PB = t.b - *this;
+    Vec2D PC = t.c - *this;
+
+    float alpha_ = PB.directed_angle_to(PC);
+    float beta_ = PC.directed_angle_to(PA);
+    float gamma_ = PA.directed_angle_to(PB);
 
     Angles result;
     result.alpha = alpha_;
     result.beta = beta_;
     result.gamma = gamma_;
+
+    return result;
 }
 
 static Vec2D angles_to_coord(const Angles & angles)
