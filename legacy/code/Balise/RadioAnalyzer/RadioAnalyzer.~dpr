@@ -1,0 +1,15 @@
+program RadioAnalyzer;
+
+uses
+  Forms,
+  URadioAnalyzer in 'URadioAnalyzer.pas' {FormRadioAnalyzer},
+  FrameInfoRobot in 'FrameInfoRobot.pas' {FrameRobotInformation: TFrame},
+  UTable in 'UTable.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.CreateForm(TFormRadioAnalyzer, FormRadioAnalyzer);
+  Application.Run;
+end.
