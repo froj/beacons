@@ -6,6 +6,8 @@ set(CMAKE_BUILD_TYPE Debug)
 add_executable(
     tests
     tests/main.cpp
+    tests/positioning_test.cpp
+    src/positioning.c
     )
 
 target_link_libraries(
