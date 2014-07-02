@@ -5,18 +5,18 @@
 #include "positioning.h"
 
 // public function prototypes
-Position positioning_position_from_angles(float alpha, float beta, float gamma);
+position_t positioning_position_from_angles(float alpha, float beta, float gamma);
 // private function prototypes
 void init(void);
 static uint8_t feq(float a, float b);
-static float cotangent_from_points(const Position * a, const Position * b, const Position * c);
-static float dot_product(const Position * a, const Position * b);
+static float cotangent_from_points(const position_t * a, const position_t * b, const position_t * c);
+static float dot_product(const position_t * a, const position_t * b);
 static float cot(float alpha);
 
 // variables global to this module
-static Position point_a;
-static Position point_b;
-static Position point_c;
+static position_t point_a;
+static position_t point_b;
+static position_t point_c;
 
 static float cot_at_a;
 static float cot_at_b;
@@ -26,7 +26,7 @@ static float cot_at_c;
  * implementation of public functions
  */
 
-Position positioning_position_from_angles(float alpha, float beta, float gamma)
+position_t positioning_position_from_angles(float alpha, float beta, float gamma)
 {
     static uint8_t is_init = 0;
     if(!is_init) {
@@ -35,9 +35,9 @@ Position positioning_position_from_angles(float alpha, float beta, float gamma)
     }
 
     // compute barycentric coordinates from angles
-    float barycentric_a = 1 / (cot_at_a - cot(alpha));
-    float barycentric_b = 1 / (cot_at_b - cot(beta));
-    float barycentric_c = 1 / (cot_at_c - cot(gamma));
+    float barycentric_a = 1.0f / (cot_at_a - cot(alpha));
+    float barycentric_b = 1.0f / (cot_at_b - cot(beta));
+    float barycentric_c = 1.0f / (cot_at_c - cot(gamma));
 
     // normalize barycentric coordinates
     float magnitude = barycentric_a + barycentric_b + barycentric_c;
@@ -45,7 +45,7 @@ Position positioning_position_from_angles(float alpha, float beta, float gamma)
     barycentric_b /= magnitude;
     barycentric_c /= magnitude;
 
-    Position result;
+    position_t result;
 
     result.x = barycentric_a * point_a.x + barycentric_b * point_b.x + barycentric_c * point_c.x;
     result.y = barycentric_a * point_a.y + barycentric_b * point_b.y + barycentric_c * point_c.y;
@@ -59,7 +59,7 @@ Position positioning_position_from_angles(float alpha, float beta, float gamma)
 
 static inline float cot(float alpha) 
 {
-    return 1/tan(alpha);
+    return 1.0f/tan(alpha);
 }
 
 // helper function to compare floats for approximate equality
@@ -70,21 +70,21 @@ static uint8_t feq(float a, float b)
 }
 
 // standard dot product function
-static float dot_product(const Position * a, const Position * b)
+static float dot_product(const position_t * a, const position_t * b)
 {
     return a->x * b->x + a->y * b->y;
 }
 
 // compute the cotangent of the angle ABC (angle at B)
-static float cotangent_from_points(const Position * a, const Position * b, const Position * c)
+static float cotangent_from_points(const position_t * a, const position_t * b, const position_t * c)
 {
     // get vector from point b to point a, BA
-    Position ba;
+    position_t ba;
     ba.x = a->x - b->x;
     ba.y= a->y - b->y;
 
     // get vector from point b to point c, BC
-    Position bc;
+    position_t bc;
     bc.x = c->x - b->x;
     bc.y = c->y - b->y;
 
@@ -120,5 +120,5 @@ void init(void)
 
     cot_at_b = cotangent_from_points(&point_a, &point_b, &point_c);
 
-    cot_at_a = cotangent_from_points(&point_b, &point_c, &point_a);
+    cot_at_c = cotangent_from_points(&point_b, &point_c, &point_a);
 }
