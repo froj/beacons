@@ -1,4 +1,7 @@
 #include <cmath>
+#include <assert.h>
+
+#include <iostream>
 
 #include "CppUTest/TestHarness.h"
 #include "CppUTest/SimpleString.h"
@@ -81,11 +84,7 @@ float Vec2D::directed_angle_to(const Vec2D & other) const
 {
     float angle = std::atan2(other._y, other._x) - std::atan2(_y, _x);
 
-    if(angle < 0) {
-        return angle + 2 * M_PI;
-    } else {
-        return angle;
-    }
+    return angle < 0 ? angle + 2 * M_PI : angle;
 }
 
 
@@ -109,24 +108,20 @@ Angles Vec2D::angles_relative_to_triangle(const Triangle & t) const
     result.beta = beta_;
     result.gamma = gamma_;
 
+    assert(std::fabs(alpha_ + beta_ + gamma_ - 2 * M_PI) < 0.0001);
+
     return result;
 }
 
 static Vec2D angles_to_coord(const Angles & angles)
 {
-    Position pos = positioning_position_from_angles(angles.alpha, angles.beta, angles.gamma);
+    position_t pos = positioning_position_from_angles(angles.alpha, angles.beta, angles.gamma);
 
     return Vec2D(pos.x, pos.y);
 }
 
 static float random(float lower, float upper)
 {
-    static bool is_seeded = false;
-    if(!is_seeded) {
-        std::srand(time(NULL));
-        is_seeded = true;
-    }
-
     float length = upper - lower;
     float r = ((float) std::rand() / RAND_MAX);
 
@@ -154,6 +149,8 @@ static Vec2D point_a = Vec2D(POINT_A_X, POINT_A_Y);
 static Vec2D point_b = Vec2D(POINT_B_X, POINT_B_Y);
 static Vec2D point_c = Vec2D(POINT_C_X, POINT_C_Y);
 
+static uint32_t rng_seed;
+
 static Triangle reference_triangle = {
     point_a,
     point_b,
@@ -164,12 +161,23 @@ TEST_GROUP(PositioningTestGroup)
 {
     void setup(void)
     {
+        rng_seed = time(NULL);
+        std::srand(rng_seed);
+
+        std::cout << "Random seed used in test: " << rng_seed << std::endl;
     }
 
     void teardown(void)
     {
     }
 };
+
+TEST(PositioningTestGroup, FixPoint)
+{
+    Vec2D p = Vec2D(1.0f,1.0f);
+    Vec2D q = angles_to_coord(p.angles_relative_to_triangle(reference_triangle));
+    CHECK_EQUAL(p,q);
+}
 
 TEST(PositioningTestGroup, RandomizedPoints)
 {
