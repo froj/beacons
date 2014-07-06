@@ -120,19 +120,6 @@ static Vec2D angles_to_coord(const Angles & angles)
     return Vec2D(pos.x, pos.y);
 }
 
-static float random(float lower, float upper)
-{
-    float length = upper - lower;
-    float r = ((float) std::rand() / RAND_MAX);
-
-    return r*length + lower;
-}
-
-static Vec2D random_point_on_table()
-{
-    return Vec2D(random(0.0f,3.0f), random(0.0f,2.0f));
-}
-
 static SimpleString StringFrom(const Vec2D & v)
 {
     SimpleString s = SimpleString();
@@ -161,10 +148,6 @@ TEST_GROUP(PositioningTestGroup)
 {
     void setup(void)
     {
-        rng_seed = time(NULL);
-        std::srand(rng_seed);
-
-        std::cout << "Random seed used in test: " << rng_seed << std::endl;
     }
 
     void teardown(void)
@@ -179,13 +162,20 @@ TEST(PositioningTestGroup, FixPoint)
     CHECK_EQUAL(p,q);
 }
 
-TEST(PositioningTestGroup, RandomizedPoints)
+TEST(PositioningTestGroup, PointA)
 {
-    static const int max_tests = 100;
-    for(int i = 0; i < max_tests; i++)
-    {
-        Vec2D random_p = random_point_on_table();
-        Vec2D after_transformation = angles_to_coord(random_p.angles_relative_to_triangle(reference_triangle));
-        CHECK_EQUAL(random_p, after_transformation);
-    }
-};
+   Vec2D res = angles_to_coord(point_a.angles_relative_to_triangle(reference_triangle));
+   CHECK_EQUAL(point_a, res);
+}
+
+TEST(PositioningTestGroup, PointB)
+{
+   Vec2D res = angles_to_coord(point_b.angles_relative_to_triangle(reference_triangle));
+   CHECK_EQUAL(point_b, res);
+}
+
+TEST(PositioningTestGroup, PointC)
+{
+   Vec2D res = angles_to_coord(point_c.angles_relative_to_triangle(reference_triangle));
+   CHECK_EQUAL(point_c, res);
+}
