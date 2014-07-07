@@ -17,38 +17,44 @@ static float cot(float alpha);
 /*
  * implementation of public functions
  */
+
 void positioning_reference_triangle_from_points(const position_t * a, const position_t * b, const position_t * c, reference_triangle_t * output)
 {
+    // verify input
     if(output == NULL || a == NULL || b == NULL || c == NULL)
     {
         return;
     }
 
+    // compute cotangents of angle inside triangle at every point
     float cot_at_a = cotangent_from_points(b, a, c);
     float cot_at_b = cotangent_from_points(a, b, c);
     float cot_at_c = cotangent_from_points(b, c, a);
 
     reference_triangle_t t = {a, b, c, cot_at_a, cot_at_b, cot_at_c};
 
+    // copy result to output
     memcpy(output, &t, sizeof(reference_triangle_t));
 }
 
 uint8_t positioning_from_angles(float alpha, float beta, float gamma, const reference_triangle_t * t, position_t * output)
 {
-    if(output == NULL || t == NULL)
+    // output is not valid if input is not valid
+    if(output == NULL || t == NULL || !feq(alpha + beta + gamma, 2 * M_PI))
     {
         return 0;
     }
 
-    uint8_t valid = 1;
+    uint8_t is_valid = 1;
 
-    // 
+    // test for possible division by zero (or very small number) 
+    // and mark result as invalid (but compute it anyway!)
     float cot_alpha = cot(alpha);
     float cot_beta = cot(beta);
     float cot_gamma = cot(gamma);
     if(feq(cot_alpha, t->cotangent_at_a) || feq(cot_beta, t->cotangent_at_b) || feq(cot_gamma, t->cotangent_at_c))
     {
-        valid = 0;
+        is_valid = 0;
     }
 
     // compute barycentric coordinates from angles
@@ -62,16 +68,17 @@ uint8_t positioning_from_angles(float alpha, float beta, float gamma, const refe
     barycentric_b /= magnitude;
     barycentric_c /= magnitude;
 
-    position_t result;
 
+    // convert to cartesian coordinates
     float x = barycentric_a * t->point_a->x + barycentric_b * t->point_b->x + barycentric_c * t->point_c->x;
     float y = barycentric_a * t->point_a->y + barycentric_b * t->point_b->y + barycentric_c * t->point_c->y;
 
     position_t pos = {x, y};
 
+    // copy result to output
     memcpy(output, &pos, sizeof(position_t));
 
-    return valid;
+    return is_valid;
 }
 
 /*
