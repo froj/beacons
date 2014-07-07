@@ -29,8 +29,9 @@ void positioning_reference_triangle_from_points(const position_t * a, const posi
         return;
     }
 
-    // test if a,b,c are positively oriented
-    if(orientation(a, b, c) > 0.0f)
+    // test if a,b,c are not positively oriented or colinear
+    float orient = orientation(a, b, c);
+    if(orient < 0.0f || feq(orient, 0.0f))
     {
         return;
     }
@@ -122,10 +123,10 @@ static float cross_product(const position_t * a, const position_t * b)
 // return orientation of points a, b, c 
 static float orientation(const position_t * a, const position_t * b, const position_t * c)
 {
-    position_t ab = {b->x - a->x, b->y - a->y};
-    position_t ac = {c->x - a->x, c->y - a->y};
+    position_t ba = {a->x - b->x, a->y - b->y};
+    position_t bc = {c->x - b->x, c->y - b->y};
 
-    return cross_product(&ab, &ac);
+    return cross_product(&ba, &bc);
 }
 
 // compute the cotangent of the angle ABC (angle at B)
