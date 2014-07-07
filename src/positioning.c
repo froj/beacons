@@ -1,43 +1,60 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "positioning.h"
 
 // public function prototypes
-position_t positioning_position_from_angles(float alpha, float beta, float gamma);
+uint8_t positioning_from_angles(float alpha, float beta, float gamma, const reference_triangle_t * t, position_t * output);
+void positioning_reference_triangle_from_points(const position_t * a, const position_t * b, const position_t * c, reference_triangle_t * output);
 // private function prototypes
-void init(void);
 static uint8_t feq(float a, float b);
 static float cotangent_from_points(const position_t * a, const position_t * b, const position_t * c);
 static float dot_product(const position_t * a, const position_t * b);
 static float cot(float alpha);
 
-// variables global to this module
-static position_t point_a;
-static position_t point_b;
-static position_t point_c;
-
-static float cot_at_a;
-static float cot_at_b;
-static float cot_at_c;
-
 /*
  * implementation of public functions
  */
-
-position_t positioning_position_from_angles(float alpha, float beta, float gamma)
+void positioning_reference_triangle_from_points(const position_t * a, const position_t * b, const position_t * c, reference_triangle_t * output)
 {
-    static uint8_t is_init = 0;
-    if(!is_init) {
-        init();
-        is_init = 1;
+    if(output == NULL || a == NULL || b == NULL || c == NULL)
+    {
+        return;
+    }
+
+    float cot_at_a = cotangent_from_points(b, a, c);
+    float cot_at_b = cotangent_from_points(a, b, c);
+    float cot_at_c = cotangent_from_points(b, c, a);
+
+    reference_triangle_t t = {a, b, c, cot_at_a, cot_at_b, cot_at_c};
+
+    memcpy(output, &t, sizeof(reference_triangle_t));
+}
+
+uint8_t positioning_from_angles(float alpha, float beta, float gamma, const reference_triangle_t * t, position_t * output)
+{
+    if(output == NULL || t == NULL)
+    {
+        return 0;
+    }
+
+    uint8_t valid = 1;
+
+    // 
+    float cot_alpha = cot(alpha);
+    float cot_beta = cot(beta);
+    float cot_gamma = cot(gamma);
+    if(feq(cot_alpha, t->cotangent_at_a) || feq(cot_beta, t->cotangent_at_b) || feq(cot_gamma, t->cotangent_at_c))
+    {
+        valid = 0;
     }
 
     // compute barycentric coordinates from angles
-    float barycentric_a = 1.0f / (cot_at_a - cot(alpha));
-    float barycentric_b = 1.0f / (cot_at_b - cot(beta));
-    float barycentric_c = 1.0f / (cot_at_c - cot(gamma));
+    float barycentric_a = 1.0f / (t->cotangent_at_a - cot_alpha);
+    float barycentric_b = 1.0f / (t->cotangent_at_b - cot_beta);
+    float barycentric_c = 1.0f / (t->cotangent_at_c - cot_gamma);
 
     // normalize barycentric coordinates
     float magnitude = barycentric_a + barycentric_b + barycentric_c;
@@ -47,19 +64,24 @@ position_t positioning_position_from_angles(float alpha, float beta, float gamma
 
     position_t result;
 
-    result.x = barycentric_a * point_a.x + barycentric_b * point_b.x + barycentric_c * point_c.x;
-    result.y = barycentric_a * point_a.y + barycentric_b * point_b.y + barycentric_c * point_c.y;
+    float x = barycentric_a * t->point_a->x + barycentric_b * t->point_b->x + barycentric_c * t->point_c->x;
+    float y = barycentric_a * t->point_a->y + barycentric_b * t->point_b->y + barycentric_c * t->point_c->y;
 
-    return result;
+    position_t pos = {x, y};
+
+    memcpy(output, &pos, sizeof(position_t));
+
+    return valid;
 }
 
 /*
  * implementation of private functions
  */
 
+//see: http://stackoverflow.com/questions/3738384/stable-cotangent
 static inline float cot(float alpha) 
 {
-    return 1.0f/tan(alpha);
+    return tan(M_PI_2 - alpha);
 }
 
 // helper function to compare floats for approximate equality
@@ -79,14 +101,10 @@ static float dot_product(const position_t * a, const position_t * b)
 static float cotangent_from_points(const position_t * a, const position_t * b, const position_t * c)
 {
     // get vector from point b to point a, BA
-    position_t ba;
-    ba.x = a->x - b->x;
-    ba.y= a->y - b->y;
+    position_t ba = {a->x - b->x, a->y - b->y};
 
     // get vector from point b to point c, BC
-    position_t bc;
-    bc.x = c->x - b->x;
-    bc.y = c->y - b->y;
+    position_t bc = {c->x - b->x, c->y - b->y};
 
     // dot product of BA and BC
     float dot_ba_bc = dot_product(&ba, &bc);
@@ -104,21 +122,3 @@ static float cotangent_from_points(const position_t * a, const position_t * b, c
     return cosine / sine;
 }
 
-// initialize and setup module variabes
-void init(void)
-{
-    point_a.x = POINT_A_X;
-    point_a.y = POINT_A_Y;
-
-    point_b.x = POINT_B_X;
-    point_b.y = POINT_B_Y;
-
-    point_c.x = POINT_C_X;
-    point_c.y = POINT_C_Y;
-
-    cot_at_a = cotangent_from_points(&point_b, &point_a, &point_c);
-
-    cot_at_b = cotangent_from_points(&point_a, &point_b, &point_c);
-
-    cot_at_c = cotangent_from_points(&point_b, &point_c, &point_a);
-}
