@@ -32,7 +32,8 @@ class Vec2D
         float dot(const Vec2D & other) const;
         float length() const;
         float directed_angle_to(const Vec2D & other) const;
-        Angles angles_relative_to_triangle(const reference_triangle_t * t) const;
+        Angles angles_relative_to_triangle(
+                const reference_triangle_t * t) const;
         Vec2D operator-(const Vec2D & other) const;
         bool operator==(const Vec2D & other) const;
         bool operator!=(const Vec2D & other) const;
@@ -81,7 +82,9 @@ float Vec2D::length() const
     return sqrt(_x*_x + _y*_y);
 }
 
-// see: http://stackoverflow.com/questions/21483999/using-atan2-to-find-angle-between-two-vectors
+// see:
+// stackoverflow.com/questions/21483999/
+// using-atan2-to-find-angle-between-two-vectors
 float Vec2D::directed_angle_to(const Vec2D & other) const
 {
     float angle = std::atan2(other._y, other._x) - std::atan2(_y, _x);
@@ -271,13 +274,13 @@ TEST_GROUP(PositioningTestGroup)
 
 TEST(PositioningTestGroup, AnglesDontSumTo2PI)
 {
-    position_t point_a = {POINT_A_X, POINT_A_Y};
-    position_t point_b = {POINT_B_X, POINT_B_Y};
-    position_t point_c = {POINT_C_X, POINT_C_Y};
+    position_t p_a = {POINT_A_X, POINT_A_Y};
+    position_t p_b = {POINT_B_X, POINT_B_Y};
+    position_t p_c = {POINT_C_X, POINT_C_Y};
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&point_a, &point_b, &point_c, &t);
+    positioning_reference_triangle_from_points(&p_a, &p_b, &p_c, &t);
 
     position_t some_point = {1.0f, 1.0f};
 
@@ -293,13 +296,13 @@ TEST(PositioningTestGroup, AnglesDontSumTo2PI)
 
 TEST(PositioningTestGroup, TrianglePointerIsNULL)
 {
-    position_t point_a = {POINT_A_X, POINT_A_Y};
-    position_t point_b = {POINT_B_X, POINT_B_Y};
-    position_t point_c = {POINT_C_X, POINT_C_Y};
+    position_t p_a = {POINT_A_X, POINT_A_Y};
+    position_t p_b = {POINT_B_X, POINT_B_Y};
+    position_t p_c = {POINT_C_X, POINT_C_Y};
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&point_a, &point_b, &point_c, &t);
+    positioning_reference_triangle_from_points(&p_a, &p_b, &p_c, &t);
 
     position_t some_point = {1.0f, 1.0f};
 
@@ -307,7 +310,12 @@ TEST(PositioningTestGroup, TrianglePointerIsNULL)
 
     position_t result = {0, 0};
 
-    bool valid = positioning_from_angles(angles.alpha, angles.beta, angles.gamma, NULL, &result);
+    bool valid = positioning_from_angles(
+            angles.alpha,
+            angles.beta,
+            angles.gamma,
+            NULL,
+            &result);
     CHECK(!valid);
     DOUBLES_EQUAL(0.0, result.x, 0.0001);
     DOUBLES_EQUAL(0.0, result.y, 0.0001);
@@ -315,13 +323,13 @@ TEST(PositioningTestGroup, TrianglePointerIsNULL)
 
 TEST(PositioningTestGroup, OutputParamIsNULL)
 {
-    position_t point_a = {POINT_A_X, POINT_A_Y};
-    position_t point_b = {POINT_B_X, POINT_B_Y};
-    position_t point_c = {POINT_C_X, POINT_C_Y};
+    position_t p_a = {POINT_A_X, POINT_A_Y};
+    position_t p_b = {POINT_B_X, POINT_B_Y};
+    position_t p_c = {POINT_C_X, POINT_C_Y};
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&point_a, &point_b, &point_c, &t);
+    positioning_reference_triangle_from_points(&p_a, &p_b, &p_c, &t);
 
     position_t some_point = {1.0f, 1.0f};
 
@@ -329,7 +337,12 @@ TEST(PositioningTestGroup, OutputParamIsNULL)
 
     position_t result = {0, 0};
 
-    bool valid = positioning_from_angles(angles.alpha, angles.beta, angles.gamma, &t, NULL);
+    bool valid = positioning_from_angles(
+            angles.alpha,
+            angles.beta,
+            angles.gamma,
+            &t,
+            NULL);
     CHECK(!valid);
     DOUBLES_EQUAL(0.0, result.x, 0.0001);
     DOUBLES_EQUAL(0.0, result.y, 0.0001);
@@ -337,13 +350,13 @@ TEST(PositioningTestGroup, OutputParamIsNULL)
 
 TEST(PositioningTestGroup, CircleOfDeath)
 {
-    position_t point_a = {1, 0};
-    position_t point_b = {0, 1};
-    position_t point_c = {-1, 0};
+    position_t p_a = {1, 0};
+    position_t p_b = {0, 1};
+    position_t p_c = {-1, 0};
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&point_a, &point_b, &point_c, &t);
+    positioning_reference_triangle_from_points(&p_a, &p_b, &p_c, &t);
 
     position_t some_point = {0.0f, -1.0f};
 
@@ -351,20 +364,25 @@ TEST(PositioningTestGroup, CircleOfDeath)
 
     position_t result = {0, 0};
 
-    bool valid = positioning_from_angles(angles.alpha, angles.beta, angles.gamma, &t, &result);
+    bool valid = positioning_from_angles(
+            angles.alpha,
+            angles.beta,
+            angles.gamma,
+            &t,
+            &result);
     CHECK(!valid);
     CHECK(Vec2D(&result) != Vec2D(&some_point));
 }
 
 TEST(PositioningTestGroup, NormalBehaviour)
 {
-    position_t point_a = {POINT_A_X, POINT_A_Y};
-    position_t point_b = {POINT_B_X, POINT_B_Y};
-    position_t point_c = {POINT_C_X, POINT_C_Y};
+    position_t p_a = {POINT_A_X, POINT_A_Y};
+    position_t p_b = {POINT_B_X, POINT_B_Y};
+    position_t p_c = {POINT_C_X, POINT_C_Y};
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&point_a, &point_b, &point_c, &t);
+    positioning_reference_triangle_from_points(&p_a, &p_b, &p_c, &t);
 
     position_t some_point = {1.0f, 1.0f};
 
@@ -372,7 +390,12 @@ TEST(PositioningTestGroup, NormalBehaviour)
 
     position_t result = {0, 0};
 
-    bool valid = positioning_from_angles(angles.alpha, angles.beta, angles.gamma, &t, &result);
+    bool valid = positioning_from_angles(
+            angles.alpha,
+            angles.beta,
+            angles.gamma,
+            &t,
+            &result);
     CHECK(valid);
     CHECK_EQUAL(Vec2D(&some_point), Vec2D(&result));
 }

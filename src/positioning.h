@@ -19,28 +19,29 @@ typedef struct {
 // initializes a reference_triangle_t from points a, b and c
 // computes cotangents of angles at each point
 // copies the result to the memory location specified by 'output'
-// 
+//
 // doesn't do anything if any of the input parameters are NULL
 // or points a, b, c are not oriented positively
 void positioning_reference_triangle_from_points(
-        const position_t * a, 
-        const position_t * b, 
-        const position_t * c, 
+        const position_t * a,
+        const position_t * b,
+        const position_t * c,
         reference_triangle_t * output);
 
-// computes cartesian coordinates from angles with respect to 
+// computes cartesian coordinates from angles with respect to
 // a reference triangle
 // copies result to the memory location specified by 'output'
-// 
+//
 // returns 1 if the result is to be trusted and can safely be used
 // returns 0 if either input params are invalid (angles don't sum to 2 Pi,
-// pointers are NULL) or result lies on/near the circumcircle of the 
+// pointers are NULL) or result lies on/near the circumcircle of the
 // reference triangle in which case the position cannot be computed
 // reliably
 uint8_t positioning_from_angles(
-        float alpha, float beta, 
-        float gamma, 
-        const reference_triangle_t * t, 
+        float alpha,
+        float beta,
+        float gamma,
+        const reference_triangle_t * t,
         position_t * output);
 
 #endif
