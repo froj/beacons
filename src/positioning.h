@@ -21,7 +21,7 @@ typedef struct {
 // copies the result to the memory location specified by 'output'
 // 
 // doesn't do anything if any of the input parameters are NULL
-// or points a, b, c are colinear
+// or points a, b, c are not oriented positively
 void positioning_reference_triangle_from_points(
         const position_t * a, 
         const position_t * b, 
