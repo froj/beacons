@@ -123,10 +123,10 @@ static float cross_product(const position_t * a, const position_t * b)
 // return orientation of points a, b, c 
 static float orientation(const position_t * a, const position_t * b, const position_t * c)
 {
-    position_t ba = {a->x - b->x, a->y - b->y};
-    position_t bc = {c->x - b->x, c->y - b->y};
+    position_t ab = {b->x - a->x, b->y - a->y};
+    position_t ac = {c->x - a->x, c->y - a->y};
 
-    return cross_product(&ba, &bc);
+    return cross_product(&ab, &ac);
 }
 
 // compute the cotangent of the angle ABC (angle at B)
