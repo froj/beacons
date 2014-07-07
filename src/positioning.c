@@ -10,9 +10,11 @@ uint8_t positioning_from_angles(float alpha, float beta, float gamma, const refe
 void positioning_reference_triangle_from_points(const position_t * a, const position_t * b, const position_t * c, reference_triangle_t * output);
 // private function prototypes
 static uint8_t feq(float a, float b);
+static uint8_t colinear(const position_t * a, const position_t * b, const position_t * c);
 static float cotangent_from_points(const position_t * a, const position_t * b, const position_t * c);
 static float dot_product(const position_t * a, const position_t * b);
 static float cot(float alpha);
+
 
 /*
  * implementation of public functions
@@ -22,6 +24,11 @@ void positioning_reference_triangle_from_points(const position_t * a, const posi
 {
     // verify input
     if(output == NULL || a == NULL || b == NULL || c == NULL)
+    {
+        return;
+    }
+
+    if(colinear(a, b, c))
     {
         return;
     }
@@ -96,6 +103,17 @@ static uint8_t feq(float a, float b)
 {
     static const float EPSILON = 0.0001f;
     return fabs(a - b) < EPSILON;
+}
+
+// see:
+// math.stackexchange.com/questions/38338/showing-three-points-are-collinear
+static uint8_t colinear(const position_t * a, const position_t * b, const position_t * c)
+{
+    float det1 = b->x * c->y + c->x * b->y;
+    float det2 = a->x * c->y + c->x * a->y;
+    float det3 = a->x * b->y + b->x * a->y;
+
+    return feq(det1 - det2 + det3, 0.0f);
 }
 
 // standard dot product function
