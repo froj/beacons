@@ -1,0 +1,9 @@
+# LaTeX build files
+*.aux
+*.bib
+*.blg
+*.log
+*.toc
+
+# vim
+*.sw[op]
