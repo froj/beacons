@@ -188,6 +188,8 @@ $\mathbf{x}_k$ is the \emph{updated state estimation}.
 
 $\mathbf{P}_k$ is the \emph{updated estimate covariance}.
 
+
+
 \section{Adding dead reckoning to the game}
 
 \subsection{Why?}
@@ -264,6 +266,129 @@ deviation of our control update i.e. $\mathbf{Q}$.
 \paragraph{The measurement}'s variance will have to determined experimentally
 and should be adapted when the robot approaches the \emph{circle of death}.
 
+
+\subsection{Next step: EKF}
+
+Because the transform described in equation~\ref{eq:p} isn't linear, it's
+actually quite wrong to use a normal \emph{Kalman filter} for the measurement.
+
+\paragraph{Measurement update with \emph{Extended Kalman Filter}}
+
+What we measure with our beacons isn't actually a position, but relative angles
+between beacons. So, our $\mathbf{H_k}$ should actually be $h_k(x_k)$, a
+function that transforms the current state to the measurement space, i.\ e.\ a
+position to angles seen between beacons from this position.
+For two beacons $A$ and $B$ at positions
+$\left(\begin{array}{c} A_x \\ A_y \end{array} \right)$ and 
+$\left(\begin{array}{c} B_x \\ B_y \end{array} \right)$ you see the angle
+
+\begin{equation}
+    \alpha = \tan^{-1}\left(\frac{B_y-y}{B_x-x}\right)
+             - \tan^{-1}\left(\frac{A_y-y}{A_x-x}\right)
+    \label{eq:pos_to_angle}
+\end{equation}
+
+at the position $\left(\begin{array}{c} x \\ y \end{array} \right)$. This is
+just the difference of the absolute angles of $\overline{PA}$
+and~$\overline{PB}$.
+
+To be even more exact, we don't measure angles directly, but the time between
+between the passage of the laser beam at two different beacons. Given a known
+rotational speed $\omega$ of the beam, we write
+
+\begin{equation}
+    \Delta t_{AB} = \frac{\tan^{-1}\left(\frac{B_y-y}{B_x-x}\right)
+        - \tan^{-1}\left(\frac{A_y-y}{A_x-x}\right)}{\omega}
+    \label{eq:pos_to_delta_t}
+\end{equation}.
+
+Like that we can do a measurement update for each of the three angles:
+
+\begin{equation}
+    h_{AB_k}\left(x_k, y_k, \omega_k\right)
+        = \frac{1}{\omega_k}\left(\tan^{-1}\left(\frac{B_y-y_k}{B_x-x_k}\right)
+        - \tan^{-1}\left(\frac{A_y-y_k}{A_x-x_k}\right)\right)
+    \label{eq:h_ab}
+\end{equation}
+
+\begin{equation}
+    h_{BC_k}\left(x_k, y_k, \omega_k\right)
+        = \frac{1}{\omega_k}\left(\tan^{-1}\left(\frac{C_y-y_k}{C_x-x_k}\right)
+        - \tan^{-1}\left(\frac{B_y-y_k}{B_x-x_k}\right)\right)
+    \label{eq:h_bc}
+\end{equation}
+
+\begin{equation}
+    h_{CA_k}\left(x_k, y_k, \omega_k\right)
+    = \frac{1}{\omega_k}\left(\tan^{-1}\left(\frac{A_y-y_k}{A_x-x_k}\right)
+        - \tan^{-1}\left(\frac{C_y-y_k}{C_x-x_k}\right)\right)
+    \label{eq:h_ca}
+\end{equation}
+
+The \emph{EKF} uses the \emph{Jacobian} of $h_k\left(\mathbf{x_k}\right)$ and
+thus we need it's \emph{partial derivatives}:
+
+\begin{equation}
+    \frac{\partial}{\partial x_k}h_{AB_k}\left(x_k, y_k, \omega_k\right)
+        = \frac{1}{\omega_k}\left(
+        \frac{B_y-y}{{\left(B_x-x\right)}^2+{\left(B_y-y\right)}^2}
+        - \frac{A_y-y}{{\left(A_x-x\right)}^2+{\left(A_y-y\right)}^2}\right)
+    \label{eq:partial_x}
+\end{equation}
+
+\begin{equation}
+    \frac{\partial}{\partial y_k}h_{AB_k}\left(x_k, y_k, \omega_k\right)
+        = \frac{1}{\omega_k}\left(
+        \frac{A_y-y}{{\left(A_x-x\right)}^2+{\left(A_y-y\right)}^2}\right)
+        - \frac{B_y-y}{{\left(B_x-x\right)}^2+{\left(B_y-y\right)}^2}
+    \label{eq:partial_y}
+\end{equation}
+
+\begin{equation}
+    \frac{\partial}{\partial \omega_k}h_{AB_k}\left(x_k, y_k, \omega_k\right)
+        = - \frac{1}{\omega_k^2}
+        \left(\tan^{-1}\left(\frac{B_y-y_k}{B_x-x_k}\right)
+        - \tan^{-1}\left(\frac{A_y-y_k}{A_x-x_k}\right)\right)
+    \label{eq:partial_omega}
+\end{equation}
+
+
+\paragraph{Extended state}
+
+You may have noticed that $\omega_k$ has been introduced as a new variable in
+the preceding paragraph. With the \emph{EKF} we can keep track of the
+laser beam's rotational speed directly by adding it to the state:
+
+
+\begin{equation}
+    \mathbf{x_k} = \left( \begin{array}{c} x_k     \\
+                                           y_k     \\
+                                           \dot{x}_k \\
+                                           \dot{y}_k \\
+                                           \omega_k \end{array} \right)
+\label{eq:ekf_state}
+\end{equation}
+
+This would give us the following \emph{state transition matrix}:
+
+\begin{equation}
+    \mathbf{F_k} = \left( \begin{array}{ccccc} 1 & 0 & \Delta t & 0 & 0 \\
+                                              0 & 1 & 0 & \Delta t & 0  \\
+                                              0 & 0 & 1 & 0 & 0 \\
+                                              0 & 0 & 0 & 1 & 0 \\
+                                              0 & 0 & 0 & 0 & 1
+                                        \end{array} \right)
+\label{eq:ekf_state_trans}
+\end{equation}
+
+\paragraph{Measuring $\mathbf{\omega_k}$}
+
+After every passage of a beacon, a measurement update on the rotational speed
+of the laser could be done by measuring the time between two passages of the
+same beacon.
+
+\paragraph{Computation time}
+\emph{To be done.}
 
 \section{Results and expectations}
 
