@@ -4,8 +4,10 @@ compiler:
   - clang
 
 before_install:
-    - git clone https://github.com/cpputest/cpputest ../cpputest
-    - pushd ../cpputest
+    - pushd ..
+    - wget "https://github.com/cpputest/cpputest.github.io/blob/master/releases/cpputest-3.6.tar.gz?raw=true" -O cpputest.tar.gz
+    - tar -xzf cpputest.tar.gz
+    - cd cpputest-3.6/
     - ./configure
     - make
     - sudo make install
