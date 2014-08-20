@@ -1,0 +1,9 @@
+depends:
+    - test-runner
+    - platform-abstraction
+
+source:
+    - positioning.c
+
+tests:
+    - tests/positioning_test.cpp
