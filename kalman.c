@@ -112,6 +112,7 @@ void kalman_init(
     // set initial state of robot
     handle->state.x = initial_config->x;
     handle->state.y = initial_config->y;
+    // assume that the robot is standing still initially
     handle->state.v_x = 0.0f;
     handle->state.v_y = 0.0f;
 
@@ -153,9 +154,11 @@ void kalman_update(
 {
     os_mutex_take(&(handle->mutex));
 
+    // predict new state
     robot_state_t pred_state;
     predict_state(&(handle->state), delta_t, &pred_state);
 
+    // predict new covariance
     covariance_t proc_noise_cov;
     process_noise_covariance(delta_t, &proc_noise_cov);
     covariance_t pred_cov;
@@ -165,17 +168,21 @@ void kalman_update(
             delta_t,
             &pred_cov);
 
+    // compute kalman gain
     kalman_gain_t gain;
     kalman_gain(&pred_cov, &(handle->measurement_covariance), &gain);
 
+    // compute difference between prediction and measurement
     vec2d_t residual;
     residual.x = measurement->x - pred_state.x;
     residual.y = measurement->y - pred_state.y;
 
+    // estimate new state considering measurement
     update_state(&pred_state, &gain, &residual, &(handle->state));
 
     update_covariance(&pred_cov, &gain, &(handle->state_covariance));
 
+    // write resulting position (and associated variances) to dest
     dest->x = handle->state.x;
     dest->y = handle->state.y;
     dest->var_x = handle->state_covariance.cov_a.a;
