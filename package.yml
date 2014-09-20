@@ -4,6 +4,7 @@ depends:
 
 source:
     - positioning.c
+    - kalman.c
 
 tests:
     - tests/positioning_test.cpp
