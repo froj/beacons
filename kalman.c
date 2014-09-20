@@ -4,36 +4,9 @@
 #include <math.h>
 
 #include "kalman.h"
+#include "beacon_config.h"
 
 // data types
-/*
- * | a b |
- * | c d |
- */
-typedef struct {
-    float a; 
-    float b;
-    float c;
-    float d;
-} matrix2d_t;
-
-typedef struct {
-    float x;
-    float y;
-    float v_x;
-    float v_y;
-} robot_state_t;
-
-/*
- * Note:
- * since covariance matrices are symmetric cov_b == transpose(cov_c)
- */
-typedef struct {
-    matrix2d_t cov_a;
-    matrix2d_t cov_b;
-    matrix2d_t cov_c;
-    matrix2d_t cov_d;
-} covariance_t;
 
 /*
  * | k1 |
@@ -50,6 +23,19 @@ typedef struct {
 } vec2d_t;
 
 // public function prototypes
+void kalman_init(
+        kalman_robot_handle_t * handle,
+        const robot_pos_t * initial_config);
+void kalman_update(
+        kalman_robot_handle_t * handle,
+        const position_t * measurement,
+        float delta_t,
+        robot_pos_t * dest);
+void kalman_update_measurement_covariance(
+        kalman_robot_handle_t * handle,
+        float var_x,
+        float var_y,
+        float cov_xy);
 
 // private function prototypes
 static uint8_t feq(float a, float b);
@@ -77,6 +63,9 @@ static void update_covariance(
         const covariance_t * predicted_cov,
         const kalman_gain_t * gain,
         covariance_t * dest);
+static void process_noise_covariance(
+        float delta_t,
+        covariance_t * dest);
 
 // 2x2 matrix functionality
 static void m_mult(
@@ -101,6 +90,7 @@ static void m_vec_mult(
         const matrix2d_t * m,
         const vec2d_t * v,
         vec2d_t * dest);
+static void m_init_identity(matrix2d_t * dest);
 
 static void cov_add(
         const covariance_t * c1,
@@ -110,6 +100,106 @@ static void cov_add(
 
 // public function implementations
 
+void kalman_init(
+        kalman_robot_handle_t * handle,
+        const robot_pos_t * initial_config)
+{
+    // initialize mutex
+    os_mutex_init(&(handle->mutex));
+
+    os_mutex_take(&(handle->mutex));
+
+    // set initial state of robot
+    handle->state.x = initial_config->x;
+    handle->state.y = initial_config->y;
+    handle->state.v_x = 0.0f;
+    handle->state.v_y = 0.0f;
+
+    // set initial state covariance
+    handle->state_covariance.cov_a.a = initial_config->var_x;
+    handle->state_covariance.cov_a.b = initial_config->cov_xy;
+    handle->state_covariance.cov_a.c = initial_config->cov_xy;
+    handle->state_covariance.cov_a.d = initial_config->var_y;
+
+    handle->state_covariance.cov_b.a = 0.0f;
+    handle->state_covariance.cov_b.b = 0.0f;
+    handle->state_covariance.cov_b.c = 0.0f;
+    handle->state_covariance.cov_b.d = 0.0f;
+
+    handle->state_covariance.cov_c.a = 0.0f;
+    handle->state_covariance.cov_c.b = 0.0f;
+    handle->state_covariance.cov_c.c = 0.0f;
+    handle->state_covariance.cov_c.d = 0.0f;
+
+    handle->state_covariance.cov_d.a = 0.0f;
+    handle->state_covariance.cov_d.b = 0.0f;
+    handle->state_covariance.cov_d.c = 0.0f;
+    handle->state_covariance.cov_d.d = 0.0f;
+
+    // set default measurment covariance
+    handle->measurement_covariance.a = MEAS_VAR_X;
+    handle->measurement_covariance.b = MEAS_COV_XY;
+    handle->measurement_covariance.c = MEAS_COV_XY;
+    handle->measurement_covariance.d = MEAS_VAR_Y;
+
+    os_mutex_release(&(handle->mutex));
+}
+
+void kalman_update(
+        kalman_robot_handle_t * handle,
+        const position_t * measurement,
+        float delta_t,
+        robot_pos_t * dest)
+{
+    os_mutex_take(&(handle->mutex));
+
+    robot_state_t pred_state;
+    predict_state(&(handle->state), delta_t, &pred_state);
+
+    covariance_t proc_noise_cov;
+    process_noise_covariance(delta_t, &proc_noise_cov);
+    covariance_t pred_cov;
+    predict_covariance(
+            &(handle->state_covariance),
+            &proc_noise_cov,
+            delta_t,
+            &pred_cov);
+
+    kalman_gain_t gain;
+    kalman_gain(&pred_cov, &(handle->measurement_covariance), &gain);
+
+    vec2d_t residual;
+    residual.x = measurement->x - pred_state.x;
+    residual.y = measurement->y - pred_state.y;
+
+    update_state(&pred_state, &gain, &residual, &(handle->state));
+
+    update_covariance(&pred_cov, &gain, &(handle->state_covariance));
+
+    dest->x = handle->state.x;
+    dest->y = handle->state.y;
+    dest->var_x = handle->state_covariance.cov_a.a;
+    dest->var_y = handle->state_covariance.cov_a.d;
+    dest->cov_xy = handle->state_covariance.cov_a.b;
+
+    os_mutex_release(&(handle->mutex));
+}
+
+void kalman_update_measurement_covariance(
+        kalman_robot_handle_t * handle,
+        float var_x,
+        float var_y,
+        float cov_xy)
+{
+    os_mutex_take(&(handle->mutex));
+
+    handle->measurement_covariance.a = var_x;
+    handle->measurement_covariance.b = cov_xy;
+    handle->measurement_covariance.c = cov_xy;
+    handle->measurement_covariance.d = var_x;
+
+    os_mutex_release(&(handle->mutex));
+}
 
 // private function implementations
 
@@ -228,6 +318,26 @@ static void update_covariance(
     m_diff(&(predicted_cov->cov_d), &(dest->cov_d), &(dest->cov_d));
 }
 
+static void process_noise_covariance(
+        float delta_t,
+        covariance_t * dest)
+{
+    static const float base_factor = 0.0625f * MAX_ACC; // 1/16 * a
+
+    m_init_identity(&(dest->cov_a));
+    m_init_identity(&(dest->cov_b));
+    m_init_identity(&(dest->cov_c));
+    m_init_identity(&(dest->cov_d));
+
+    float factor = 0.25f * delta_t * delta_t * delta_t * delta_t;
+    m_scalar_mult(factor * base_factor, &(dest->cov_a), &(dest->cov_a));
+    factor = 0.5f * delta_t * delta_t * delta_t;
+    m_scalar_mult(factor * base_factor, &(dest->cov_b), &(dest->cov_b));
+    m_scalar_mult(factor * base_factor, &(dest->cov_c), &(dest->cov_c));
+    factor = delta_t * delta_t;
+    m_scalar_mult(factor * base_factor, &(dest->cov_d), &(dest->cov_d));
+}
+
 
 // matrix function implementation
 
@@ -327,6 +437,14 @@ static void m_vec_mult(
 
     dest->x = n_x;
     dest->y = n_y;
+}
+
+static void m_init_identity(matrix2d_t * dest)
+{
+    dest->a = 1.0f;
+    dest->b = 0.0f;
+    dest->c = 0.0f;
+    dest->d = 1.0f;
 }
 
 static void cov_add(
