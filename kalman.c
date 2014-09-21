@@ -403,8 +403,7 @@ static uint8_t m_inv(const matrix2d_t * m1, matrix2d_t * dest)
 {
     float det = m1->_a * m1->_d - m1->_b * m1->_c;
 
-    if(feq(det, 0.0f))
-    {
+    if(feq(det, 0.0f)) {
         return 0;
     }
 
