@@ -21,10 +21,10 @@ typedef struct {
 //
 // internal state used by kalman filter
 typedef struct {
-    float x;
-    float y;
-    float v_x;
-    float v_y;
+    float _x;
+    float _y;
+    float _v_x;
+    float _v_y;
 } robot_state_t;
 
 // WARNING : this type is only exported to allow static allocation
@@ -33,29 +33,29 @@ typedef struct {
 // | a b |
 // | c d |
 typedef struct {
-    float a; 
-    float b;
-    float c;
-    float d;
+    float _a; 
+    float _b;
+    float _c;
+    float _d;
 } matrix2d_t;
 
 // WARNING : this type is only exported to allow static allocation
 // of kalman_robot_handle_t
 typedef struct {
-    matrix2d_t cov_a;
-    matrix2d_t cov_b;
-    matrix2d_t cov_c;
-    matrix2d_t cov_d;
+    matrix2d_t _cov_a;
+    matrix2d_t _cov_b;
+    matrix2d_t _cov_c;
+    matrix2d_t _cov_d;
 } covariance_t;
 
 
 // WARNING : this type should be opaque, its only here to 
 // allow static allocation by user
 typedef struct {
-    mutex_t mutex;
-    robot_state_t state;
-    covariance_t state_covariance;
-    matrix2d_t measurement_covariance;
+    mutex_t _mutex;
+    robot_state_t _state;
+    covariance_t _state_covariance;
+    matrix2d_t _measurement_covariance;
 } kalman_robot_handle_t;
 
 // intializes all fields of 'handle'
