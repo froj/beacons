@@ -66,7 +66,10 @@ typedef struct {
 //
 // kalman_init, kalman_update and kalman_update_measurement_covariance cannot
 // be called with the same handle concurrently (blocked by mutex)
-void kalman_init(
+//
+// return 1 if initialization was successful
+// return 0 if initialization failed (input parameters NULL)
+uint8_t kalman_init(
         kalman_robot_handle_t * handle,
         const robot_pos_t * initial_config);
 
@@ -78,7 +81,12 @@ void kalman_init(
 //
 // kalman_init, kalman_update and kalman_update_measurement_covariance cannot
 // be called with the same handle concurrently (blocked by mutex)
-void kalman_update(
+//
+// return 1 if everything went fine
+// return 0 on failure (result cannot be used/trusted, handle or dest NULL)
+// if the measurement passed in is NULL it will skip the kalman update step
+// and only make a prediction
+uint8_t kalman_update(
         kalman_robot_handle_t * handle,
         const position_t * measurement,
         float delta_t,
@@ -89,7 +97,10 @@ void kalman_update(
 //
 // kalman_init, kalman_update and kalman_update_measurement_covariance cannot
 // be called with the same handle concurrently (blocked by mutex)
-void kalman_update_measurement_covariance(
+//
+// return 1 on success
+// return 0 on failure (handle is NULL)
+uint8_t kalman_update_measurement_covariance(
         kalman_robot_handle_t * handle,
         float var_x,
         float var_y,

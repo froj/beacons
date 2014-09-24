@@ -23,15 +23,15 @@ typedef struct {
 } vec2d_t;
 
 // public function prototypes
-void kalman_init(
+uint8_t kalman_init(
         kalman_robot_handle_t * handle,
         const robot_pos_t * initial_config);
-void kalman_update(
+uint8_t kalman_update(
         kalman_robot_handle_t * handle,
         const position_t * measurement,
         float delta_t,
         robot_pos_t * dest);
-void kalman_update_measurement_covariance(
+uint8_t kalman_update_measurement_covariance(
         kalman_robot_handle_t * handle,
         float var_x,
         float var_y,
@@ -100,10 +100,15 @@ static void cov_add(
 
 // public function implementations
 
-void kalman_init(
+uint8_t kalman_init(
         kalman_robot_handle_t * handle,
         const robot_pos_t * initial_config)
 {
+    // verify input
+    if(handle == NULL || initial_config == NULL) {
+        return 0;
+    }
+
     // initialize mutex
     os_mutex_init(&(handle->_mutex));
 
@@ -144,44 +149,57 @@ void kalman_init(
     handle->_measurement_covariance._d = MEAS_VAR_Y;
 
     os_mutex_release(&(handle->_mutex));
+
+    return 1;
 }
 
-void kalman_update(
+uint8_t kalman_update(
         kalman_robot_handle_t * handle,
         const position_t * measurement,
         float delta_t,
         robot_pos_t * dest)
 {
+    if(handle == NULL || dest == NULL) {
+        return 0;
+    }
+
     os_mutex_take(&(handle->_mutex));
 
     // predict new state
-    robot_state_t pred_state;
-    predict_state(&(handle->_state), delta_t, &pred_state);
+    predict_state(&(handle->_state), delta_t, &(handle->_state));
 
     // predict new covariance
     covariance_t proc_noise_cov;
     process_noise_covariance(delta_t, &proc_noise_cov);
-    covariance_t pred_cov;
     predict_covariance(
             &(handle->_state_covariance),
             &proc_noise_cov,
             delta_t,
-            &pred_cov);
+            &(handle->_state_covariance));
 
-    // compute kalman gain
-    kalman_gain_t gain;
-    kalman_gain(&pred_cov, &(handle->_measurement_covariance), &gain);
+    // if there is a measurement make kalman update
+    if(measurement != NULL) {
+        // compute kalman gain
+        kalman_gain_t gain;
+        kalman_gain(
+                &(handle->_state_covariance),
+                &(handle->_measurement_covariance),
+                &gain);
 
-    // compute difference between prediction and measurement
-    vec2d_t residual;
-    residual._x = measurement->x - pred_state._x;
-    residual._y = measurement->y - pred_state._y;
+        // compute difference between prediction and measurement
+        vec2d_t residual;
+        residual._x = measurement->x - handle->_state._x;
+        residual._y = measurement->y - handle->_state._y;
 
-    // estimate new state considering measurement
-    update_state(&pred_state, &gain, &residual, &(handle->_state));
+        // estimate new state considering measurement
+        update_state(&(handle->_state), &gain, &residual, &(handle->_state));
 
-    update_covariance(&pred_cov, &gain, &(handle->_state_covariance));
-
+        update_covariance(
+                &(handle->_state_covariance),
+                &gain,
+                &(handle->_state_covariance));
+    }
+    
     // write resulting position (and associated variances) to dest
     dest->x = handle->_state._x;
     dest->y = handle->_state._y;
@@ -190,14 +208,20 @@ void kalman_update(
     dest->cov_xy = handle->_state_covariance._cov_a._b;
 
     os_mutex_release(&(handle->_mutex));
+
+    return 1;
 }
 
-void kalman_update_measurement_covariance(
+uint8_t kalman_update_measurement_covariance(
         kalman_robot_handle_t * handle,
         float var_x,
         float var_y,
         float cov_xy)
 {
+    if(handle == NULL) {
+        return 0;
+    }
+
     os_mutex_take(&(handle->_mutex));
 
     handle->_measurement_covariance._a = var_x;
@@ -206,6 +230,8 @@ void kalman_update_measurement_covariance(
     handle->_measurement_covariance._d = var_x;
 
     os_mutex_release(&(handle->_mutex));
+
+    return 1;
 }
 
 // private function implementations
