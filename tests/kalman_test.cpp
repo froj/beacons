@@ -108,3 +108,48 @@ TEST(KalmanMeasurementCovUpdate, kalman_update_measurement_covariance)
     DOUBLES_EQUAL(new_cov_xy, to_test._c, FLOAT_COMPARE_TOLERANCE);
     DOUBLES_EQUAL(new_cov_xy, to_test._b, FLOAT_COMPARE_TOLERANCE);
 }
+
+TEST_GROUP(KalmanUpdate)
+{
+    robot_pos_t init_pos;
+    kalman_robot_handle_t handle;
+
+    void setup(void)
+    {
+        init_pos.x = 0.0f;
+        init_pos.y = 0.0f;
+        init_pos.var_x = 1.0f;
+        init_pos.var_y = 1.0f;
+        init_pos.cov_xy = 0.0f;
+
+        kalman_init(&handle, &init_pos);
+    }
+
+    void teardown(void)
+    {
+
+    }
+};
+
+TEST(KalmanUpdate, identity)
+{
+    // suppose measurements are exact
+    kalman_update_measurement_covariance(&handle, 0.0f, 0.0f, 0.0f);
+
+    // suppose measurement is equal to position
+    position_t meas = {init_pos.x, init_pos.y};
+
+    // suppose no time has passed
+    float delta_t = 0.0f;
+
+    robot_pos_t dest;
+
+    kalman_update(&handle, &meas, delta_t, &dest);
+
+    // then kalman operation is identity operation
+    DOUBLES_EQUAL(init_pos.x, dest.x, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(init_pos.y, dest.y, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(init_pos.var_x, dest.var_x, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(init_pos.var_y, dest.var_y, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(init_pos.cov_xy, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
+}
