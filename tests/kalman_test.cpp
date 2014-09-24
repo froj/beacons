@@ -154,7 +154,7 @@ TEST(KalmanUpdate, identity)
     DOUBLES_EQUAL(init_pos.cov_xy, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
 }
 
-TEST(KalmanUpdate, simple1)
+TEST(KalmanUpdate, noTime1)
 {
     // measurements are not exact anymore
     kalman_update_measurement_covariance(&handle, 1.0f, 1.0f, 1.0f);
@@ -177,7 +177,7 @@ TEST(KalmanUpdate, simple1)
     DOUBLES_EQUAL(init_pos.cov_xy, one_third, FLOAT_COMPARE_TOLERANCE);
 }
 
-TEST(KalmanUpdate, simple2)
+TEST(KalmanUpdate, noTime2)
 {
     // measurements are not exact anymore
     kalman_update_measurement_covariance(&handle, 1.0f, 1.0f, 1.0f);
