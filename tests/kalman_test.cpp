@@ -153,3 +153,26 @@ TEST(KalmanUpdate, identity)
     DOUBLES_EQUAL(init_pos.var_y, dest.var_y, FLOAT_COMPARE_TOLERANCE);
     DOUBLES_EQUAL(init_pos.cov_xy, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
 }
+
+TEST(KalmanUpdate, simple1)
+{
+    // measurements are not exact anymore
+    kalman_update_measurement_covariance(&handle, 1.0f, 1.0f, 1.0f);
+
+    // measurement is equal to position
+    position_t meas = {init_pos.x, init_pos.y};
+
+    // no time has passed
+    float delta_t = 0.0f;
+
+    robot_pos_t dest;
+    kalman_update(&handle, &meas, delta_t, &dest);
+    // estimated position remains the same
+    DOUBLES_EQUAL(init_pos.x, dest.x, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(init_pos.y, dest.y, FLOAT_COMPARE_TOLERANCE);
+    // estimated covariances change
+    float one_third = (1.0f)/(3.0f);
+    DOUBLES_EQUAL(init_pos.var_x, one_third, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(init_pos.var_y, one_third, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(init_pos.cov_xy, one_third, FLOAT_COMPARE_TOLERANCE);
+}
