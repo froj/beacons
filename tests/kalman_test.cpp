@@ -8,6 +8,167 @@ extern "C" {
 
 #define FLOAT_COMPARE_TOLERANCE (0.0001f)
 
+TEST_GROUP(KalmanBadInput)
+{
+    void setup(void)
+    {
+
+    }
+
+    void teardown(void)
+    {
+
+    }
+};
+
+TEST(KalmanBadInput, initHandleNULL)
+{
+    robot_pos_t init_pos; 
+    init_pos.x = 0.0f;
+    init_pos.y = 0.0f;
+    init_pos.var_x = 1.0f;
+    init_pos.var_y = 1.0f;
+    init_pos.cov_xy = 0.0f;
+    CHECK(kalman_init(NULL, &init_pos) == 0);
+}
+
+TEST(KalmanBadInput, initConfigNULL)
+{
+    kalman_robot_handle_t handle;
+    CHECK(kalman_init(&handle, NULL) == 0);
+}
+
+TEST(KalmanBadInput, initAllNULL)
+{
+    CHECK(kalman_init(NULL, NULL) == 0);
+}
+
+TEST(KalmanBadInput, updateMeasCovHandleNULL)
+{
+    robot_pos_t init_pos; 
+    init_pos.x = 0.0f;
+    init_pos.y = 0.0f;
+    init_pos.var_x = 1.0f;
+    init_pos.var_y = 1.0f;
+    init_pos.cov_xy = 0.0f;
+
+    kalman_robot_handle_t handle;
+
+    kalman_init(&handle, &init_pos);
+
+    CHECK(kalman_update_measurement_covariance(NULL, 0.0f, 0.0f, 0.0f) == 0);
+}
+
+TEST(KalmanBadInput, updateHandleNULL)
+{
+    robot_pos_t init_pos; 
+    init_pos.x = 0.0f;
+    init_pos.y = 0.0f;
+    init_pos.var_x = 1.0f;
+    init_pos.var_y = 1.0f;
+    init_pos.cov_xy = 0.0f;
+
+    kalman_robot_handle_t handle;
+
+    kalman_init(&handle, &init_pos);
+
+    position_t meas = {init_pos.x, init_pos.y};
+
+    float delta_t = 1.0f;
+
+    robot_pos_t dest;
+
+    CHECK(kalman_update(NULL, &meas, delta_t, &dest) == 0);
+}
+
+TEST(KalmanBadInput, updateDestNull)
+{
+    robot_pos_t init_pos; 
+    init_pos.x = 0.0f;
+    init_pos.y = 0.0f;
+    init_pos.var_x = 1.0f;
+    init_pos.var_y = 1.0f;
+    init_pos.cov_xy = 0.0f;
+
+    kalman_robot_handle_t handle;
+
+    kalman_init(&handle, &init_pos);
+
+    position_t meas = {init_pos.x, init_pos.y};
+
+    float delta_t = 1.0f;
+
+    robot_pos_t dest;
+
+    CHECK(kalman_update(&handle, &meas, delta_t, NULL) == 0);
+}
+
+TEST(KalmanBadInput, updateTimeNegative)
+{
+    robot_pos_t init_pos; 
+    init_pos.x = 0.0f;
+    init_pos.y = 0.0f;
+    init_pos.var_x = 1.0f;
+    init_pos.var_y = 1.0f;
+    init_pos.cov_xy = 0.0f;
+
+    kalman_robot_handle_t handle;
+
+    kalman_init(&handle, &init_pos);
+
+    position_t meas = {init_pos.x, init_pos.y};
+
+    float delta_t = -1.0f;
+
+    robot_pos_t dest;
+
+    CHECK(kalman_update(&handle, &meas, delta_t, &dest) == 0);
+}
+
+TEST(KalmanBadInput, updateMeasNullSuccess)
+{
+    robot_pos_t init_pos; 
+    init_pos.x = 0.0f;
+    init_pos.y = 0.0f;
+    init_pos.var_x = 1.0f;
+    init_pos.var_y = 1.0f;
+    init_pos.cov_xy = 0.0f;
+
+    kalman_robot_handle_t handle;
+
+    kalman_init(&handle, &init_pos);
+
+    position_t meas = {init_pos.x, init_pos.y};
+
+    float delta_t = 1.0f;
+
+    robot_pos_t dest;
+
+    CHECK(kalman_update(&handle, NULL, delta_t, &dest) == 1);
+}
+
+TEST(KalmanBadInput, updateTimeZeroSuccess)
+{
+    robot_pos_t init_pos; 
+    init_pos.x = 0.0f;
+    init_pos.y = 0.0f;
+    init_pos.var_x = 1.0f;
+    init_pos.var_y = 1.0f;
+    init_pos.cov_xy = 0.0f;
+
+    kalman_robot_handle_t handle;
+
+    kalman_init(&handle, &init_pos);
+
+    position_t meas = {init_pos.x, init_pos.y};
+
+    float delta_t = 0.0f;
+
+    robot_pos_t dest;
+
+    CHECK(kalman_update(&handle, &meas, delta_t, &dest) == 1);
+}
+
 TEST_GROUP(KalmanInitializationTestGroup)
 {
     void setup(void)

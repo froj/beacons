@@ -159,7 +159,7 @@ uint8_t kalman_update(
         float delta_t,
         robot_pos_t * dest)
 {
-    if(handle == NULL || dest == NULL) {
+    if(handle == NULL || dest == NULL || delta_t < 0.0f) {
         return 0;
     }
 

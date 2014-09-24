@@ -84,6 +84,7 @@ uint8_t kalman_init(
 //
 // return 1 if everything went fine
 // return 0 on failure (result cannot be used/trusted, handle or dest NULL)
+// fails if delta_t < 0
 // if the measurement passed in is NULL it will skip the kalman update step
 // and only make a prediction
 uint8_t kalman_update(
