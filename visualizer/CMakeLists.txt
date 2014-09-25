@@ -4,6 +4,7 @@ project(beacon-visualizer)
 include_directories(../dependencies/ ../)
 
 add_library(beacon SHARED 
+    glue.c
     ../kalman.c 
     ../positioning.c
     ../dependencies/platform-abstraction/mock/mutex.c
