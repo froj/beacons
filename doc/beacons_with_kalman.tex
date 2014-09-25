@@ -145,7 +145,7 @@ and the old state estimation.
 \end{equation}
 
 The covariance $\mathbf{\hat P}_k$ of the predicted state depends on the previous
-covaraiance, the state transition function and the \emph{state transition error}
+covariance, the state transition function and the \emph{state transition error}
 $\mathbf{Q}_k$ (see~\ref{pg:variance_state_trans}).
 
 \paragraph{Update}
@@ -189,6 +189,16 @@ $\mathbf{x}_k$ is the \emph{updated state estimation}.
 $\mathbf{P}_k$ is the \emph{updated estimate covariance}.
 
 
+\subsection{The dynamic case}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{dynamic_case}
+    \caption{Measured angle $\alpha_1$ and predicted angle $\alpha_2$ between
+    two beacons $A$ and $B$ for a robot moving from $P_1$ to $P_2$.}
+\label{fig:dynamic_case}
+\end{figure}
+
 
 \section{Adding dead reckoning to the game}
 
@@ -207,29 +217,19 @@ A possible state for the Kalman filter is
 \begin{equation}
     \mathbf{x_k} = \left( \begin{array}{c} x_k     \\
                                            y_k     \\
-                                           x_{k-1} \\
-                                           y_{k-1} \end{array} \right)
+                                           \dot{x}_k \\
+                                           \dot{y}_k \end{array} \right)
 \label{eq:kalman_state}
 \end{equation}
 
 \paragraph{State transition}
 
 \begin{equation}
-    \mathbf{F_k} = \left( \begin{array}{cccc} 1 + \tau & 0 & -\tau & 0\\
-                                              0 & 1 + \tau & 0 & -\tau\\
-                                              1 & 0 & 0 & 0 \\
-                                              0 & 1 & 0 & 0 \end{array} \right)
+    \mathbf{F_k} = \left( \begin{array}{cccc} 1 & 0 & \Delta t & 0\\
+                                              0 & 1 & 0 & \Delta t \\
+                                              0 & 0 & 1 & 0 \\
+                                              0 & 0 & 0 & 1 \end{array} \right)
 \label{eq:state_trans}
-\end{equation}
-
-Where $\tau$ is the factor $ \frac{t_k - t_{k-1}}{t_{k-1} - t_{k-2}}$.
-This makes for the following computation:
-\begin{equation}
-    \mathbf{x_k} = \mathbf{x_{k-1}} + \mathbf{\Delta x_k}
-    = \mathbf{x_{k-1}} + \mathbf{v_{k-1}} \Delta t_k
-    = \mathbf{x_{k-1}} + \frac{\mathbf{x_{k-1}} - \mathbf{x_{k-2}}}
-                              {\Delta t_{k-1}} \Delta t_k
-\label{eq:state_trans_math}
 \end{equation}
 
 \paragraph{Measurement}
@@ -272,6 +272,8 @@ and should be adapted when the robot approaches the \emph{circle of death}.
 Because the transform described in equation~\ref{eq:p} isn't linear, it's
 actually quite wrong to use a normal \emph{Kalman filter} for the measurement.
 
+\subsubsection{Predicting relative angles}
+
 \paragraph{Measurement update with \emph{Extended Kalman Filter}}
 
 What we measure with our beacons isn't actually a position, but relative angles
@@ -292,7 +294,7 @@ at the position $\left(\begin{array}{c} x \\ y \end{array} \right)$. This is
 just the difference of the absolute angles of $\overline{PA}$
 and~$\overline{PB}$.
 
-To be even more exact, we don't measure angles directly, but the time between
+To be even more precise, we don't measure angles directly, but the time between
 between the passage of the laser beam at two different beacons. Given a known
 rotational speed $\omega$ of the beam, we write
 
@@ -326,7 +328,7 @@ Like that we can do a measurement update for each of the three angles:
 \end{equation}
 
 The \emph{EKF} uses the \emph{Jacobian} of $h_k\left(\mathbf{x_k}\right)$ and
-thus we need it's \emph{partial derivatives}:
+thus we need its \emph{partial derivatives}:
 
 \begin{equation}
     \frac{\partial}{\partial x_k}h_{AB_k}\left(x_k, y_k, \omega_k\right)
@@ -339,8 +341,8 @@ thus we need it's \emph{partial derivatives}:
 \begin{equation}
     \frac{\partial}{\partial y_k}h_{AB_k}\left(x_k, y_k, \omega_k\right)
         = \frac{1}{\omega_k}\left(
-        \frac{A_y-y}{{\left(A_x-x\right)}^2+{\left(A_y-y\right)}^2}\right)
-        - \frac{B_y-y}{{\left(B_x-x\right)}^2+{\left(B_y-y\right)}^2}
+        \frac{A_y-y}{{\left(A_x-x\right)}^2+{\left(A_y-y\right)}^2}
+        - \frac{B_y-y}{{\left(B_x-x\right)}^2+{\left(B_y-y\right)}^2}\right)
     \label{eq:partial_y}
 \end{equation}
 
@@ -389,6 +391,85 @@ same beacon.
 
 \paragraph{Computation time}
 \emph{To be done.}
+
+\subsubsection{Predicting absolute timestamps}
+
+To evade the problem shown in figure~\ref{fig:dynamic_case}, one could try to
+predict and measure the absolute time at which the laser passes a certain
+beacon, instead of the relative time between two beacons. Like that, the
+measurement only depends on the instantaneous position and not the previous
+one as well. But we need the \emph{phase} $\phi_k$ as well as the rotational
+speed $\omega_k$ of the laser beam in relation to our coordinate system as a
+variable in our state:
+
+\begin{equation}
+    \mathbf{x_k} = \left( \begin{array}{c} x_k     \\
+                                           y_k     \\
+                                           \dot{x}_k \\
+                                           \dot{y}_k \\
+                                           \omega_k \\
+                                           \phi_k \end{array} \right)
+\label{eq:ekf_state_2}
+\end{equation}
+
+\begin{equation}
+    \mathbf{F_k} = \left( \begin{array}{cccccc}
+                    1 & 0 & \Delta t & 0 & 0 & 0 \\
+                    0 & 1 & 0 & \Delta t & 0 & 0  \\
+                    0 & 0 & 1 & 0 & 0 & 0 \\
+                    0 & 0 & 0 & 1 & 0 & 0 \\
+                    0 & 0 & 0 & 0 & 1 & 0 \\
+                    0 & 0 & 0 & 0 & 0 & 1
+                    \end{array} \right)
+\label{eq:ekf_state_trans_2}
+\end{equation}
+
+\paragraph{Measurements}
+
+\begin{equation}
+    h_{A_k}\left(x_k, y_k, \omega_k, \phi_k\right)
+        = \frac{1}{\omega_k}\left(\tan^{-1}\left(\frac{A_y-y_k}{A_x-x_k}\right)
+            + \phi_k \right)
+    \label{eq:h_a}
+\end{equation}
+
+\begin{equation}
+    \frac{\partial}{\partial x_k}h_{A_k}\left(x_k, y_k, \omega_k, \phi_k\right)
+        = \frac{1}{\omega_k}\left(
+        \frac{A_y-y}{{\left(A_x-x\right)}^2+{\left(A_y-y\right)}^2}\right)
+    \label{eq:partial_x_2}
+\end{equation}
+
+\begin{equation}
+    \frac{\partial}{\partial y_k}h_{A_k}\left(x_k, y_k, \omega_k, \phi_k\right)
+        = \frac{1}{\omega_k}\left(
+        - \frac{A_y-y}{{\left(A_x-x\right)}^2+{\left(A_y-y\right)}^2}\right)
+    \label{eq:partial_y_2}
+\end{equation}
+
+\begin{equation}
+    \frac{\partial}{\partial \omega_k}h_{A_k}
+    \left(x_k, y_k, \omega_k, \phi_k\right)
+    = - \frac{1}{\omega_k^2}\left(\tan^{-1}\left(\frac{A_y-y_k}{A_x-x_k}\right)
+      + \phi_k \right)
+    \label{eq:partial_omega_2}
+\end{equation}
+
+\begin{equation}
+    \frac{\partial}{\partial \phi_k}h_{A_k}
+    \left(x_k, y_k, \omega_k, \phi_k\right)
+    = \frac{1}{\omega_k}
+    \label{eq:partial_phi}
+\end{equation}
+
+\paragraph{Initial values}
+
+It is quite impossible to know the values of $\omega_0$ and $\phi_0$, but
+that's not much of a problem, as the Kalman filter should be able to guess
+them pretty well pretty soon. It is important, though, that the initial
+variances, as well as their precision's decay (i.e. $\mathbf{Q}$), is well
+known.
+
 
 \section{Results and expectations}
 
