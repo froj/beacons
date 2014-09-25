@@ -34,5 +34,8 @@ CMakeLists.txt
 # cmake build folder of visualizer
 visualizer/build/
 
+# python
+*.pyc
+
 # custom packager dependency folder
 dependencies/
