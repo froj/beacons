@@ -27,3 +27,6 @@
 
 # CMake build folder
 build/*
+
+# custom packager dependency folder
+dependencies/
