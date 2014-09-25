@@ -78,9 +78,14 @@ void update_state(
         uint8_t considerMeas)
 {
     position_t meas;
-    positioning_from_angles(alpha, beta, gamma, &ref_triangle, &meas);
+    uint8_t reliable = positioning_from_angles(
+            alpha,
+            beta,
+            gamma,
+            &ref_triangle,
+            &meas);
 
-    if(considerMeas != 0) {
+    if(considerMeas != 0 || reliable != 0) {
         kalman_update(&handle, &meas, delta_t, &current);
     } else {
         kalman_update(&handle, NULL, delta_t, &current);
