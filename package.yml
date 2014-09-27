@@ -5,6 +5,7 @@ depends:
 
 source:
     - src/positioning.c
+    - src/beacon_angles.c
 
 target.arm:
     - src/main.c
@@ -15,3 +16,4 @@ templates:
 
 tests:
     - tests/positioning_test.cpp
+    - tests/beacon_angles_test.cpp
