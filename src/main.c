@@ -38,43 +38,15 @@ void exti_irq_init(void)
     // SYSCFG clock is needed for EXTI
     rcc_periph_clock_enable(RCC_SYSCFG);
 
-    // EXTI Line 13
-    exti_enable_request(EXTI13);
+    // EXTI Line 7
+    exti_enable_request(EXTI7);
     // Trigger on falling edge
-    exti_set_trigger(EXTI13, EXTI_TRIGGER_FALLING);
+    exti_set_trigger(EXTI7, EXTI_TRIGGER_RISING);
     // Port C
-    exti_select_source(EXTI13, GPIOC);
+    exti_select_source(EXTI7, GPIOC);
 
     // Enable interrupt
-    nvic_enable_irq(NVIC_EXTI15_10_IRQ);
-}
-
-void uart_putc(char c)
-{
-    usart_send_blocking(USART2, c);
-}
-
-char uart_getc(void)
-{
-    return usart_recv_blocking(USART2);
-}
-
-int uart_write(const char *p, int len)
-{
-    int i;
-    for(i = 0; i < len; i++) {
-        uart_putc(p[i]);
-    }
-    return len;
-}
-
-int uart_read(char *p, int len)
-{
-    int i;
-    for(i = 0; i < len; i++) {
-        p[i] = uart_getc();
-    }
-    return len;
+    nvic_enable_irq(NVIC_EXTI9_5_IRQ);
 }
 
 
@@ -109,7 +81,9 @@ THREAD_STACK mystack[1024];
 void mythread_main(void *context)
 {
     (void) context;
-    uint32_t mytimestamp;
+    uint32_t mytimestamp = 0;
+    uint32_t mynewtimestamp;
+    uint32_t t_diff;
 
     printf("My Thread\n");
 
@@ -118,10 +92,13 @@ void mythread_main(void *context)
     while (1) {
         os_semaphore_wait(&mysem);
 
-        if(os_timestamp_diff_and_update(&mytimestamp) > 10000){
+        mynewtimestamp = os_timestamp_get();
+
+        if((t_diff = mynewtimestamp - mytimestamp) > 10000){
+            mytimestamp = mynewtimestamp;
             // toggle user-LED
             gpio_toggle(GPIOB, GPIO13);
-            printf("Time: %d\n", (int)mytimestamp);
+            printf("Time: %d\n", (int)t_diff);
         }
     }
 }
@@ -142,9 +119,6 @@ int main(void)
 
     os_init();
 
-    // printf can only be used after os_run()
-    uart_write("Create My Thread\n", 17);
-
     os_thread_create(&mythread, mythread_main, mystack, sizeof(mystack), "My Thread", 0, NULL);
 
     os_run();
@@ -156,7 +130,6 @@ int main(void)
 /*
 void exti0_isr(void)
 {
-
 }
 
 void exti1_isr(void)
@@ -177,17 +150,17 @@ void exti4_isr(void)
 {
 
 }
+*/
 
 void exti9_5_isr(void)
 {
-
-}
-*/
-
-
-void exti15_10_isr(void)
-{
     // Clear interrupt request flag
-    exti_reset_request(EXTI13);
+    exti_reset_request(EXTI7);
     os_semaphore_signal(&mysem);
 }
+
+/*
+void exti15_10_isr(void)
+{
+}
+*/
