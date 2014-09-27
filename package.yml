@@ -1,9 +1,17 @@
 depends:
     - test-runner
+    - uCOS-III
     - platform-abstraction
 
 source:
     - positioning.c
+
+target.arm:
+    - src/main.c
+    - src/runtime.c
+
+templates:
+    Makefile.jinja: Makefile
 
 tests:
     - tests/positioning_test.cpp
