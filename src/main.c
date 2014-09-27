@@ -35,14 +35,17 @@ void uart2_init(void)
 
 void exti_irq_init(void)
 {
-    // User button
-    rcc_periph_clock_enable(RCC_GPIOC);
-    gpio_mode_setup(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO13);
+    // SYSCFG clock is needed for EXTI
+    rcc_periph_clock_enable(RCC_SYSCFG);
 
+    // EXTI Line 13
     exti_enable_request(EXTI13);
-    exti_set_trigger(EXTI13, EXTI_TRIGGER_RISING);
+    // Trigger on falling edge
+    exti_set_trigger(EXTI13, EXTI_TRIGGER_FALLING);
+    // Port C
     exti_select_source(EXTI13, GPIOC);
 
+    // Enable interrupt
     nvic_enable_irq(NVIC_EXTI15_10_IRQ);
 }
 
@@ -184,6 +187,7 @@ void exti9_5_isr(void)
 
 void exti15_10_isr(void)
 {
+    // Clear interrupt request flag
     exti_reset_request(EXTI13);
     os_semaphore_signal(&mysem);
 }
