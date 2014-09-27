@@ -4,7 +4,7 @@ depends:
     - platform-abstraction
 
 source:
-    - positioning.c
+    - src/positioning.c
 
 target.arm:
     - src/main.c
