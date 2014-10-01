@@ -10,7 +10,10 @@
 
 #include <platform-abstraction/threading.h>
 #include <platform-abstraction/semaphore.h>
+#include <platform-abstraction/mutex.h>
 #include <platform-abstraction/timestamp.h>
+
+#include "beacon_angles.h"
 
 void uart2_init(void)
 {
@@ -38,15 +41,21 @@ void exti_irq_init(void)
     // SYSCFG clock is needed for EXTI
     rcc_periph_clock_enable(RCC_SYSCFG);
 
-    // EXTI Line 7
-    exti_enable_request(EXTI7);
-    // Trigger on falling edge
-    exti_set_trigger(EXTI7, EXTI_TRIGGER_RISING);
-    // Port C
-    exti_select_source(EXTI7, GPIOC);
-
-    // Enable interrupt
-    nvic_enable_irq(NVIC_EXTI9_5_IRQ);
+    // Setup for PF0
+    exti_enable_request(EXTI0);
+    exti_set_trigger(EXTI0, EXTI_TRIGGER_RISING);
+    exti_select_source(EXTI0, GPIOF);
+    nvic_enable_irq(NVIC_EXTI0_IRQ);
+    // Setup for PF1
+    exti_enable_request(EXTI1);
+    exti_set_trigger(EXTI1, EXTI_TRIGGER_RISING);
+    exti_select_source(EXTI1, GPIOF);
+    nvic_enable_irq(NVIC_EXTI1_IRQ);
+    // Setup for PD2
+    exti_enable_request(EXTI2);
+    exti_set_trigger(EXTI2, EXTI_TRIGGER_RISING);
+    exti_select_source(EXTI2, GPIOD);
+    nvic_enable_irq(NVIC_EXTI2_TSC_IRQ);
 }
 
 
@@ -73,32 +82,31 @@ void fpu_config(void)
     FPCCR = fpccr;
 }
 
-semaphore_t mysem;
 
-os_thread_t mythread;
-THREAD_STACK mystack[1024];
+beacon_angles_t laser_one;
+beacon_angles_t laser_two;
 
-void mythread_main(void *context)
+
+os_thread_t laser_one_thread;
+THREAD_STACK laser_one_stack[1024];
+
+#define DEG(X) (X * 180 / 3.14159)
+
+void laser_one_main(void *context)
 {
     (void) context;
-    uint32_t mytimestamp = 0;
-    uint32_t mynewtimestamp;
-    uint32_t t_diff;
 
-    printf("My Thread\n");
-
-    os_semaphore_init(&mysem, 0);
+    printf("Laser One Thread\n");
 
     while (1) {
-        os_semaphore_wait(&mysem);
 
-        mynewtimestamp = os_timestamp_get();
-
-        if((t_diff = mynewtimestamp - mytimestamp) > 10000){
-            mytimestamp = mynewtimestamp;
-            // toggle user-LED
+        os_semaphore_wait(&laser_one.measurement_ready);
+        if(beacon_angles_calculate(&laser_one)){
             gpio_toggle(GPIOB, GPIO13);
-            printf("Time: %d\n", (int)t_diff);
+            os_mutex_take(&laser_one.access);
+            printf("alpha: %f, beta: %f, gamma: %f\n",
+                    DEG(laser_one.alpha), DEG(laser_one.beta), DEG(laser_one.gamma));
+            os_mutex_release(&laser_one.access);
         }
     }
 }
@@ -110,6 +118,13 @@ int main(void)
     fpu_config();
 
     uart2_init();
+
+    beacon_angles_init(&laser_one);
+    beacon_angles_init(&laser_two);
+    beacon_angles_set_minimal_period(&laser_one, 50000);
+    beacon_angles_set_minimal_period(&laser_two, 50000);
+
+
     exti_irq_init();
 
     // User LED
@@ -119,7 +134,8 @@ int main(void)
 
     os_init();
 
-    os_thread_create(&mythread, mythread_main, mystack, sizeof(mystack), "My Thread", 0, NULL);
+    os_thread_create(&laser_one_thread, laser_one_main, laser_one_stack,
+            sizeof(laser_one_stack), "L1", 0, NULL);
 
     os_run();
 
@@ -127,40 +143,44 @@ int main(void)
 }
 
 
-/*
+// Beacon A, laser 1
+// PF0 (connected to pin 6 on JP5)
 void exti0_isr(void)
 {
+    exti_reset_request(EXTI0);
+    beacon_angles_update_timestamp(&laser_one, A, os_timestamp_get());
 }
 
+// Beacon B, laser 1
+// PF1 (connected to pin 10 on JP5)
 void exti1_isr(void)
 {
-
+    exti_reset_request(EXTI1);
+    beacon_angles_update_timestamp(&laser_one, B, os_timestamp_get());
 }
+
+// Beacon C, laser 1
+// PD2 (connected to pin 12 on JP5)
 void exti2_tsc_isr(void)
 {
-
+    exti_reset_request(EXTI2);
+    beacon_angles_update_timestamp(&laser_one, C, os_timestamp_get());
 }
 
-void exti3_isr(void)
-{
-
-}
-
-void exti4_isr(void)
-{
-
-}
-*/
-
+// Beacon A and B, laser 2
+// PB8 (connected to pin 5 on JP5) & PB9 (connected to pin 9 on JP5)
 void exti9_5_isr(void)
 {
     // Clear interrupt request flag
-    exti_reset_request(EXTI7);
-    os_semaphore_signal(&mysem);
+    exti_reset_request(EXTI8);
+    exti_reset_request(EXTI9);
+
 }
 
-/*
+// Beacon C, laser 2
+// PA10 (connected to pin 11 on JP5)
 void exti15_10_isr(void)
 {
+    exti_reset_request(EXTI10);
 }
-*/
+
