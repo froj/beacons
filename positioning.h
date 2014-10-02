@@ -20,9 +20,10 @@ typedef struct {
 // computes cotangents of angles at each point
 // copies the result to the memory location specified by 'output'
 //
-// doesn't do anything if any of the input parameters are NULL
+// return 1 on correct initialization
+// doesn't do anything and return 0 if any of the input parameters are NULL
 // or points a, b, c are not oriented positively
-void positioning_reference_triangle_from_points(
+uint8_t positioning_reference_triangle_from_points(
         const position_t * a,
         const position_t * b,
         const position_t * c,
