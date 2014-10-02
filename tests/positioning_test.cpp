@@ -150,7 +150,12 @@ TEST(ReferenceTriangleTestGroup, FirstArgumentNull)
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(NULL, &p2, &p3, &t);
+    bool success = positioning_reference_triangle_from_points(
+            NULL,
+            &p2,
+            &p3,
+            &t);
+    CHECK(!success);
     POINTERS_EQUAL(NULL, t.point_a);
     POINTERS_EQUAL(NULL, t.point_b);
     POINTERS_EQUAL(NULL, t.point_c);
@@ -167,7 +172,12 @@ TEST(ReferenceTriangleTestGroup, SecondArgumentNull)
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&p1, NULL, &p3, &t);
+    bool success = positioning_reference_triangle_from_points(
+            &p1,
+            NULL,
+            &p3,
+            &t);
+    CHECK(!success);
     POINTERS_EQUAL(NULL, t.point_a);
     POINTERS_EQUAL(NULL, t.point_b);
     POINTERS_EQUAL(NULL, t.point_c);
@@ -184,7 +194,12 @@ TEST(ReferenceTriangleTestGroup, ThirdArgumentNull)
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&p1, &p2, NULL, &t);
+    bool success = positioning_reference_triangle_from_points(
+            &p1,
+            &p2,
+            NULL,
+            &t);
+    CHECK(!success);
     POINTERS_EQUAL(NULL, t.point_a);
     POINTERS_EQUAL(NULL, t.point_b);
     POINTERS_EQUAL(NULL, t.point_c);
@@ -201,7 +216,12 @@ TEST(ReferenceTriangleTestGroup, FourthArgumentNull)
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&p1, &p2, &p3, NULL);
+    bool success = positioning_reference_triangle_from_points(
+            &p1,
+            &p2,
+            &p3,
+            NULL);
+    CHECK(!success);
     POINTERS_EQUAL(NULL, t.point_a);
     POINTERS_EQUAL(NULL, t.point_b);
     POINTERS_EQUAL(NULL, t.point_c);
@@ -218,7 +238,12 @@ TEST(ReferenceTriangleTestGroup, PointsWrongOrientation)
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&p3, &p2, &p1, &t);
+    bool success = positioning_reference_triangle_from_points(
+            &p3,
+            &p2,
+            &p1,
+            &t);
+    CHECK(!success);
     POINTERS_EQUAL(NULL, t.point_a);
     POINTERS_EQUAL(NULL, t.point_b);
     POINTERS_EQUAL(NULL, t.point_c);
@@ -235,7 +260,12 @@ TEST(ReferenceTriangleTestGroup, PointsColinear)
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&p1, &p2, &p3, &t);
+    bool success = positioning_reference_triangle_from_points(
+            &p1,
+            &p2,
+            &p3,
+            &t);
+    CHECK(!success);
     POINTERS_EQUAL(NULL, t.point_a);
     POINTERS_EQUAL(NULL, t.point_b);
     POINTERS_EQUAL(NULL, t.point_c);
@@ -252,7 +282,12 @@ TEST(ReferenceTriangleTestGroup, NormalOperation)
 
     reference_triangle_t t = {NULL, NULL, NULL, 0, 0, 0};
 
-    positioning_reference_triangle_from_points(&p1, &p2, &p3, &t);
+    bool success = positioning_reference_triangle_from_points(
+            &p1,
+            &p2,
+            &p3,
+            &t);
+    CHECK(success);
     POINTERS_EQUAL(&p1, t.point_a);
     POINTERS_EQUAL(&p2, t.point_b);
     POINTERS_EQUAL(&p3, t.point_c);
