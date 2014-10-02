@@ -84,9 +84,8 @@ TEST(BeaconAnglesTestGroup, CanSignalMesurementReady)
 {
     beacon_angles_update_timestamp(&angles, B, 10000);
     beacon_angles_update_timestamp(&angles, C, 20000);
-    beacon_angles_update_timestamp(&angles, A, 30000);
     CHECK_FALSE(os_semaphore_try(&angles.measurement_ready));
-    beacon_angles_calculate(&angles);
+    beacon_angles_update_timestamp(&angles, A, 30000);
     CHECK(os_semaphore_try(&angles.measurement_ready));
     CHECK_FALSE(os_semaphore_try(&angles.measurement_ready));
 }
@@ -100,6 +99,8 @@ TEST(BeaconAnglesTestGroup, CanCalculateAngles)
     uint32_t time_offset = 20000;
     uint32_t period = 60000;
 
+    beacon_angles_update_timestamp(&angles, B, 0);
+    beacon_angles_update_timestamp(&angles, C, time_offset / 2);
     beacon_angles_update_timestamp(&angles, A, time_offset);
     beacon_angles_update_timestamp(&angles, B, time_offset +
                                                period * gamma / M_PI / 2);
@@ -107,7 +108,8 @@ TEST(BeaconAnglesTestGroup, CanCalculateAngles)
                                                period * (gamma + beta) / M_PI / 2);
     beacon_angles_update_timestamp(&angles, A, time_offset + period);
 
-    beacon_angles_calculate(&angles);
+    CHECK_TRUE(os_semaphore_try(&angles.measurement_ready));
+    CHECK_TRUE(beacon_angles_calculate(&angles));
 
     DOUBLES_EQUAL(alpha, angles.alpha, M_PI / 1800);
     DOUBLES_EQUAL(beta, angles.beta, M_PI / 1800);
@@ -122,7 +124,6 @@ TEST(BeaconAnglesTestGroup, CanDetectMissingBeacon)
     beacon_angles_update_timestamp(&angles, C, -50);
     beacon_angles_update_timestamp(&angles, A,  80);
 
-    beacon_angles_calculate(&angles);
-
-    CHECK_FALSE(os_semaphore_try(&angles.measurement_ready));
+    CHECK_TRUE(os_semaphore_try(&angles.measurement_ready));
+    CHECK_FALSE(beacon_angles_calculate(&angles));
 }
