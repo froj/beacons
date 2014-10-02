@@ -12,7 +12,7 @@ uint8_t positioning_from_angles(
         float gamma,
         const reference_triangle_t * t,
         position_t * output);
-void positioning_reference_triangle_from_points(
+uint8_t positioning_reference_triangle_from_points(
         const position_t * a,
         const position_t * b,
         const position_t * c,
@@ -36,7 +36,7 @@ static float cot(float alpha);
  * implementation of public functions
  */
 
-void positioning_reference_triangle_from_points(
+uint8_t positioning_reference_triangle_from_points(
         const position_t * a,
         const position_t * b,
         const position_t * c,
@@ -44,13 +44,13 @@ void positioning_reference_triangle_from_points(
 {
     // verify input
     if (output == NULL || a == NULL || b == NULL || c == NULL) {
-        return;
+        return 0;
     }
 
     // test if a,b,c are not positively oriented or colinear
     float orient = orientation(a, b, c);
     if (orient < 0.0f || feq(orient, 0.0f)) {
-        return;
+        return 0;
     }
 
     // compute cotangents of angle inside triangle at every point
@@ -62,6 +62,9 @@ void positioning_reference_triangle_from_points(
 
     // copy result to output
     memcpy(output, &t, sizeof(reference_triangle_t));
+
+    // success
+    return 1;
 }
 
 uint8_t positioning_from_angles(
