@@ -8,3 +8,4 @@ source:
 
 tests:
     - tests/positioning_test.cpp
+    - tests/kalman_test.cpp
