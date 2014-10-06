@@ -113,7 +113,7 @@ def main():
 
     bw.setup(pos.x, pos.y)
 
-    bw.update_meas_cov(0.01, 0.01, 0.0)
+    bw.update_meas_cov(0.2, 0.2, 0.0)
 
     clock = pygame.time.Clock()
     while True:
@@ -147,7 +147,6 @@ def main():
             pos = update_pos(pos, speed, delta_t)
 
             angles = angles_to_triangle(pos)
-            
             kalman_state = bw.next_state(
                 angles[0],
                 angles[1],
