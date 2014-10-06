@@ -111,9 +111,12 @@ def main():
     pos = Vec2D(1.0, 1.0)
     speed = Vec2D(0.0, 0.0)
 
+    time_between_measurements = 0.1
+    accumulated_time = 0.0
+
     bw.setup(pos.x, pos.y)
 
-    bw.update_meas_cov(0.2, 0.2, 0.0)
+    bw.update_meas_cov(0.01, 0.01, 0.0)
 
     clock = pygame.time.Clock()
     while True:
@@ -125,7 +128,8 @@ def main():
                 if event.key == pygame.K_p:
                     paused = not paused
                 if event.key == pygame.K_m:
-                    measure = not measure
+                    pass
+                    #measure = not measure
 
         pressed_key = pygame.key.get_pressed()
         acc = Vec2D(0, 0)
@@ -139,6 +143,14 @@ def main():
             acc = acc + Vec2D(1.0, 0.0)
 
         delta_t = float(clock.tick()) / 1000
+
+        accumulated_time = accumulated_time + delta_t
+
+        if accumulated_time > time_between_measurements:
+            accumulated_time = accumulated_time - time_between_measurements
+            measure = True
+        else:
+            measure = False
 
         if not paused:
             SCREEN.fill(BLACK)
@@ -154,8 +166,6 @@ def main():
                 delta_t,
                 measure
             )
-
-            print kalman_state
 
             draw_state(kalman_state, RED)
             draw_state((pos.x, pos.y, 0, 0, 0), BLUE)
