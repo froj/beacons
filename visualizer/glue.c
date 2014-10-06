@@ -85,7 +85,7 @@ void update_state(
             &ref_triangle,
             &meas);
 
-    if(considerMeas != 0 || reliable != 0) {
+    if(considerMeas != 0 && reliable != 0) {
         kalman_update(&handle, &meas, delta_t, &current);
     } else {
         kalman_update(&handle, NULL, delta_t, &current);
