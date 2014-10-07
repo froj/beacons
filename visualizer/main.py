@@ -3,6 +3,7 @@ import numpy as np
 import pygame
 import sys
 import math
+import random
 
 import beaconwrapper as bw
 
@@ -165,8 +166,10 @@ def main():
 
             speed = update_speed(speed, acc, delta_t)
             pos = update_pos(pos, speed, delta_t)
+            err_pos = Vec2D(random.gauss(0, MEAS_STD_X), random.gauss(0, MEAS_STD_Y))
+            err_pos += pos
 
-            angles = angles_to_triangle(pos)
+            angles = angles_to_triangle(err_pos)
             kalman_state = bw.next_state(
                 angles[0],
                 angles[1],
