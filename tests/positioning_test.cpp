@@ -7,7 +7,7 @@
 #include "CppUTest/SimpleString.h"
 
 extern "C" {
-#include "../positioning.h"
+#include "../src/positioning.h"
 }
 
 #define POINT_A_X (3.0f)

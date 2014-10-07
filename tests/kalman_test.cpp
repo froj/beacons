@@ -2,8 +2,8 @@
 #include "CppUTest/TestHarness.h"
 
 extern "C" {
-#include "../kalman.h"
-#include "../beacon_config.h"
+#include "../src/kalman.h"
+#include "../src/beacon_config.h"
 }
 
 #define FLOAT_COMPARE_TOLERANCE (0.0001f)
@@ -23,7 +23,7 @@ TEST_GROUP(KalmanBadInput)
 
 TEST(KalmanBadInput, initHandleNULL)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;
@@ -45,7 +45,7 @@ TEST(KalmanBadInput, initAllNULL)
 
 TEST(KalmanBadInput, updateMeasCovHandleNULL)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;
@@ -61,7 +61,7 @@ TEST(KalmanBadInput, updateMeasCovHandleNULL)
 
 TEST(KalmanBadInput, updateHandleNULL)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;
@@ -83,7 +83,7 @@ TEST(KalmanBadInput, updateHandleNULL)
 
 TEST(KalmanBadInput, updateDestNull)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;
@@ -105,7 +105,7 @@ TEST(KalmanBadInput, updateDestNull)
 
 TEST(KalmanBadInput, updateTimeNegative)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;
@@ -127,7 +127,7 @@ TEST(KalmanBadInput, updateTimeNegative)
 
 TEST(KalmanBadInput, updateMeasNullSuccess)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;
@@ -149,7 +149,7 @@ TEST(KalmanBadInput, updateMeasNullSuccess)
 
 TEST(KalmanBadInput, updateTimeZeroSuccess)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;
@@ -182,7 +182,7 @@ TEST_GROUP(KalmanInitializationTestGroup)
 
 TEST(KalmanInitializationTestGroup, kalman_init)
 {
-    robot_pos_t init_pos; 
+    robot_pos_t init_pos;
     init_pos.x = 0.0f;
     init_pos.y = 0.0f;
     init_pos.var_x = 1.0f;

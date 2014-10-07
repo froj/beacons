@@ -1,11 +1,21 @@
 depends:
     - test-runner
+    - uCOS-III
     - platform-abstraction
 
 source:
-    - positioning.c
-    - kalman.c
+    - src/kalman.c
+    - src/positioning.c
+    - src/beacon_angles.c
+
+target.arm:
+    - src/main.c
+    - src/runtime.c
+
+templates:
+    Makefile.jinja: Makefile
 
 tests:
     - tests/positioning_test.cpp
     - tests/kalman_test.cpp
+	- tests/beacon_angles_test.cpp
