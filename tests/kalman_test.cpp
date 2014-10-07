@@ -310,9 +310,9 @@ TEST(KalmanUpdate, identity)
     // then kalman operation is identity operation
     DOUBLES_EQUAL(init_pos.x, dest.x, FLOAT_COMPARE_TOLERANCE);
     DOUBLES_EQUAL(init_pos.y, dest.y, FLOAT_COMPARE_TOLERANCE);
-    DOUBLES_EQUAL(init_pos.var_x, dest.var_x, FLOAT_COMPARE_TOLERANCE);
-    DOUBLES_EQUAL(init_pos.var_y, dest.var_y, FLOAT_COMPARE_TOLERANCE);
-    DOUBLES_EQUAL(init_pos.cov_xy, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(0.0f, dest.var_x, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(0.0f, dest.var_y, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(0.0f, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
 }
 
 TEST(KalmanUpdate, noTime1)
@@ -333,9 +333,9 @@ TEST(KalmanUpdate, noTime1)
     DOUBLES_EQUAL(init_pos.y, dest.y, FLOAT_COMPARE_TOLERANCE);
     // estimated covariances change
     float one_third = (1.0f)/(3.0f);
-    DOUBLES_EQUAL(init_pos.var_x, one_third, FLOAT_COMPARE_TOLERANCE);
-    DOUBLES_EQUAL(init_pos.var_y, one_third, FLOAT_COMPARE_TOLERANCE);
-    DOUBLES_EQUAL(init_pos.cov_xy, one_third, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(one_third, dest.var_x, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(one_third, dest.var_y, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(one_third, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
 }
 
 TEST(KalmanUpdate, noTime2)
@@ -357,7 +357,7 @@ TEST(KalmanUpdate, noTime2)
     DOUBLES_EQUAL(init_pos.y + one_over_thirty, dest.y, FLOAT_COMPARE_TOLERANCE);
     // estimated covariances change -- same as in previous test
     float one_third = (1.0f)/(3.0f);
-    DOUBLES_EQUAL(init_pos.var_x, one_third, FLOAT_COMPARE_TOLERANCE);
-    DOUBLES_EQUAL(init_pos.var_y, one_third, FLOAT_COMPARE_TOLERANCE);
-    DOUBLES_EQUAL(init_pos.cov_xy, one_third, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(one_third, dest.var_x, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(one_third, dest.var_y, FLOAT_COMPARE_TOLERANCE);
+    DOUBLES_EQUAL(one_third, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
 }

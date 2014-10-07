@@ -199,7 +199,7 @@ uint8_t kalman_update(
                 &gain,
                 &(handle->_state_covariance));
     }
-    
+
     // write resulting position (and associated variances) to dest
     dest->x = handle->_state._x;
     dest->y = handle->_state._y;
@@ -227,7 +227,7 @@ uint8_t kalman_update_measurement_covariance(
     handle->_measurement_covariance._a = var_x;
     handle->_measurement_covariance._b = cov_xy;
     handle->_measurement_covariance._c = cov_xy;
-    handle->_measurement_covariance._d = var_x;
+    handle->_measurement_covariance._d = var_y;
 
     os_mutex_release(&(handle->_mutex));
 
@@ -334,21 +334,22 @@ static void update_covariance(
         const kalman_gain_t * gain,
         covariance_t * dest)
 {
+    matrix2d_t intermediate;
     // Adest = Asrc - K1*Asrc
-    m_mult(&(gain->_k1), &(predicted_cov->_cov_a), &(dest->_cov_a));
-    m_diff(&(predicted_cov->_cov_a), &(dest->_cov_a), &(dest->_cov_a));
+    m_mult(&(gain->_k1), &(predicted_cov->_cov_a), &intermediate);
+    m_diff(&(predicted_cov->_cov_a), &intermediate, &(dest->_cov_a));
 
     // Bdest = Bsrc - K1*Bsrc
-    m_mult(&(gain->_k1), &(predicted_cov->_cov_b), &(dest->_cov_b));
-    m_diff(&(predicted_cov->_cov_b), &(dest->_cov_b), &(dest->_cov_b));
+    m_mult(&(gain->_k1), &(predicted_cov->_cov_b), &intermediate);
+    m_diff(&(predicted_cov->_cov_b), &intermediate, &(dest->_cov_b));
 
     // Cdest = Csrc - K2*Asrc
-    m_mult(&(gain->_k2), &(predicted_cov->_cov_a), &(dest->_cov_c));
-    m_diff(&(predicted_cov->_cov_c), &(dest->_cov_c), &(dest->_cov_c));
+    m_mult(&(gain->_k2), &(predicted_cov->_cov_a), &intermediate);
+    m_diff(&(predicted_cov->_cov_c), &intermediate, &(dest->_cov_c));
 
     // Ddest = Dsrc - K2*Bsrc
-    m_mult(&(gain->_k2), &(predicted_cov->_cov_b), &(dest->_cov_d));
-    m_diff(&(predicted_cov->_cov_d), &(dest->_cov_d), &(dest->_cov_d));
+    m_mult(&(gain->_k2), &(predicted_cov->_cov_b), &intermediate);
+    m_diff(&(predicted_cov->_cov_d), &intermediate, &(dest->_cov_d));
 }
 
 static void process_noise_covariance(
