@@ -3,6 +3,7 @@ import numpy as np
 import pygame
 import sys
 import math
+import random
 
 import beaconwrapper as bw
 
@@ -28,6 +29,14 @@ POINT_B = Vec2D(0.0, 2.0)
 POINT_C = Vec2D(0.0, 0.0)
 
 MAX_V = 1.6
+
+FRAME_RATE = 50
+
+MEAS_STD_X = 0.03
+MEAS_STD_Y = 0.03
+MEAS_COV_XY = 0.0
+
+MEAS_FREQ = 15   # Hz
 
 def draw_state(state, color):
     "draw a position and the covariance around it"
@@ -111,12 +120,12 @@ def main():
     pos = Vec2D(1.0, 1.0)
     speed = Vec2D(0.0, 0.0)
 
-    time_between_measurements = 0.1
+    time_between_measurements = 1 / MEAS_FREQ
     accumulated_time = 0.0
 
     bw.setup(pos.x, pos.y)
 
-    bw.update_meas_cov(0.01, 0.01, 0.0)
+    bw.update_meas_cov(MEAS_STD_X**2, MEAS_STD_Y**2, MEAS_COV_XY)
 
     clock = pygame.time.Clock()
     while True:
@@ -142,7 +151,7 @@ def main():
         if pressed_key[pygame.K_d]:
             acc = acc + Vec2D(1.0, 0.0)
 
-        delta_t = float(clock.tick()) / 1000
+        delta_t = float(clock.tick(FRAME_RATE)) / 1000
 
         accumulated_time = accumulated_time + delta_t
 
@@ -157,8 +166,10 @@ def main():
 
             speed = update_speed(speed, acc, delta_t)
             pos = update_pos(pos, speed, delta_t)
+            err_pos = Vec2D(random.gauss(0, MEAS_STD_X), random.gauss(0, MEAS_STD_Y))
+            err_pos += pos
 
-            angles = angles_to_triangle(pos)
+            angles = angles_to_triangle(err_pos)
             kalman_state = bw.next_state(
                 angles[0],
                 angles[1],
