@@ -29,6 +29,8 @@ POINT_C = Vec2D(0.0, 0.0)
 
 MAX_V = 1.6
 
+FRAME_RATE = 50
+
 def draw_state(state, color):
     "draw a position and the covariance around it"
     (pos_x, pos_y, var_x, var_y, cov_xy) = state
@@ -142,7 +144,7 @@ def main():
         if pressed_key[pygame.K_d]:
             acc = acc + Vec2D(1.0, 0.0)
 
-        delta_t = float(clock.tick()) / 1000
+        delta_t = float(clock.tick(FRAME_RATE)) / 1000
 
         accumulated_time = accumulated_time + delta_t
 
