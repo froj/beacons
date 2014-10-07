@@ -5,7 +5,7 @@ include_directories(../dependencies/ ../)
 
 add_library(beacon SHARED 
     glue.c
-    ../kalman.c 
-    ../positioning.c
+    ../src/kalman.c 
+    ../src/positioning.c
     ../dependencies/platform-abstraction/mock/mutex.c
 )

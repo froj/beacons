@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../positioning.h"
-#include "../kalman.h"
+#include "../src/positioning.h"
+#include "../src/kalman.h"
 
 #define POINT_A_X (3.0f)
 #define POINT_A_Y (1.0f)
