@@ -31,6 +31,12 @@ MAX_V = 1.6
 
 FRAME_RATE = 50
 
+MEAS_STD_X = 0.03
+MEAS_STD_Y = 0.03
+MEAS_COV_XY = 0.0
+
+MEAS_FREQ = 15   # Hz
+
 def draw_state(state, color):
     "draw a position and the covariance around it"
     (pos_x, pos_y, var_x, var_y, cov_xy) = state
@@ -113,12 +119,12 @@ def main():
     pos = Vec2D(1.0, 1.0)
     speed = Vec2D(0.0, 0.0)
 
-    time_between_measurements = 0.1
+    time_between_measurements = 1 / MEAS_FREQ
     accumulated_time = 0.0
 
     bw.setup(pos.x, pos.y)
 
-    bw.update_meas_cov(0.01, 0.01, 0.0)
+    bw.update_meas_cov(MEAS_STD_X**2, MEAS_STD_Y**2, MEAS_COV_XY)
 
     clock = pygame.time.Clock()
     while True:
