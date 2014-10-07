@@ -18,4 +18,4 @@ templates:
 tests:
     - tests/positioning_test.cpp
     - tests/kalman_test.cpp
-	- tests/beacon_angles_test.cpp
+    - tests/beacon_angles_test.cpp
