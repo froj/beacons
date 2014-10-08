@@ -6,6 +6,7 @@
 #include <libopencm3/stm32/exti.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 
 #include <platform-abstraction/threading.h>
@@ -209,13 +210,15 @@ THREAD_STACK communication_stack[1024];
 
 void communication_main(void *context)
 {
+    robot_pos_t robot_one_pos_copy;
     while(42){
         os_thread_sleep_least_us(1000000 / OUTPUT_FREQ);
         os_mutex_take(&robot_one_pos_access);
-        printf("x: %1.3f, y: %1.3f, var_x: %1.3f, var_y: %1.3f, cov: %1.3f\n\r",
-                robot_one_pos.x, robot_one_pos.y,
-                robot_one_pos.var_x, robot_one_pos.var_y, robot_one_pos.cov_xy);
+        memcpy(&robot_one_pos_copy, &robot_one_pos, sizeof(robot_pos_t));
         os_mutex_release(&robot_one_pos_access);
+        printf("%d %.3f x: %1.3f, y: %1.3f, var_x: %1.3f, var_y: %1.3f, cov: %1.3f\n\r",
+                updates, time_passed / updates, robot_one_pos_copy.x, robot_one_pos_copy.y,
+                robot_one_pos_copy.var_x, robot_one_pos_copy.var_y, robot_one_pos_copy.cov_xy);
     }
 
 }
