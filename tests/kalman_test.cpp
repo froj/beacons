@@ -486,7 +486,7 @@ TEST(KalmanSetProcNoiseProp, NegProp)
             FLOAT_COMPARE_TOLERANCE);
 }
 
-TEST(KalmanSetProcNoiseProp, NegProp)
+TEST(KalmanSetProcNoiseProp, normalBehaviour)
 {
     // precondition after init
     DOUBLES_EQUAL(
