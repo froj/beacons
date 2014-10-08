@@ -146,12 +146,15 @@ void laser_one_main(void *context)
                         laser_one.beta,
                         &table, &laser_one_pos)){
                 gpio_toggle(GPIOB, GPIO13);
+                os_mutex_release(&laser_one_pos_access);
+                os_mutex_release(&laser_one.access);
                 os_semaphore_signal(&laser_one_pos_ready);
                 //printf("x: %f, y: %f\n\r", laser_one_pos.x, laser_one_pos.y);
+            } else{
+                os_mutex_release(&laser_one_pos_access);
+                os_mutex_release(&laser_one.access);
             }
 
-            os_mutex_release(&laser_one_pos_access);
-            os_mutex_release(&laser_one.access);
         }
     }
 }
