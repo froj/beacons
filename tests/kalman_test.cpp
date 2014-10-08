@@ -361,3 +361,147 @@ TEST(KalmanUpdate, noTime2)
     DOUBLES_EQUAL(one_third, dest.var_y, FLOAT_COMPARE_TOLERANCE);
     DOUBLES_EQUAL(one_third, dest.cov_xy, FLOAT_COMPARE_TOLERANCE);
 }
+
+TEST_GROUP(KalmanSetMaxAcc)
+{
+
+    robot_pos_t init_pos;
+    kalman_robot_handle_t handle;
+
+    void setup(void)
+    {
+        init_pos.x = 0.0f;
+        init_pos.y = 0.0f;
+        init_pos.var_x = 1.0f;
+        init_pos.var_y = 1.0f;
+        init_pos.cov_xy = 0.0f;
+
+        kalman_init(&handle, &init_pos);
+    }
+
+    void teardown(void)
+    {
+
+    }
+};
+
+TEST(KalmanSetMaxAcc, NullHandle)
+{
+    // precondition after init
+    DOUBLES_EQUAL(handle._max_acc, MAX_ACC, FLOAT_COMPARE_TOLERANCE);
+
+    bool result = kalman_set_max_acc(NULL, 1.0f);
+    // setting should fail
+    CHECK(!result);
+
+    // handle acc has not changed
+    DOUBLES_EQUAL(handle._max_acc, MAX_ACC, FLOAT_COMPARE_TOLERANCE);
+}
+
+TEST(KalmanSetMaxAcc, NegAcc)
+{
+    // precondition after init
+    DOUBLES_EQUAL(handle._max_acc, MAX_ACC, FLOAT_COMPARE_TOLERANCE);
+
+    bool result = kalman_set_max_acc(&handle, -1.0f);
+    // setting should fail
+    CHECK(!result);
+
+    // handle acc has not changed
+    DOUBLES_EQUAL(handle._max_acc, MAX_ACC, FLOAT_COMPARE_TOLERANCE);
+}
+
+TEST(KalmanSetMaxAcc, normalBehaviour)
+{
+    // precondition after init
+    DOUBLES_EQUAL(handle._max_acc, MAX_ACC, FLOAT_COMPARE_TOLERANCE);
+    
+    float new_acc = 2.0f;
+
+    bool result = kalman_set_max_acc(&handle, new_acc);
+    CHECK(result);
+
+    // handle acc has not changed
+    DOUBLES_EQUAL(handle._max_acc, new_acc, FLOAT_COMPARE_TOLERANCE);
+}
+
+TEST_GROUP(KalmanSetProcNoiseProp)
+{
+
+    robot_pos_t init_pos;
+    kalman_robot_handle_t handle;
+
+    void setup(void)
+    {
+        init_pos.x = 0.0f;
+        init_pos.y = 0.0f;
+        init_pos.var_x = 1.0f;
+        init_pos.var_y = 1.0f;
+        init_pos.cov_xy = 0.0f;
+
+        kalman_init(&handle, &init_pos);
+    }
+
+    void teardown(void)
+    {
+
+    }
+};
+
+TEST(KalmanSetProcNoiseProp, NullHandle)
+{
+    // precondition after init
+    DOUBLES_EQUAL(
+            handle._process_noise_proportionality,
+            PROC_NOISE_PROP,
+            FLOAT_COMPARE_TOLERANCE);
+
+    bool result = kalman_set_proc_noise_proportionality(NULL, 1.0f);
+
+    // should fail
+    CHECK(!result);
+
+    DOUBLES_EQUAL(
+            handle._process_noise_proportionality,
+            PROC_NOISE_PROP,
+            FLOAT_COMPARE_TOLERANCE);
+}
+
+TEST(KalmanSetProcNoiseProp, NegProp)
+{
+    // precondition after init
+    DOUBLES_EQUAL(
+            handle._process_noise_proportionality,
+            PROC_NOISE_PROP,
+            FLOAT_COMPARE_TOLERANCE);
+
+    bool result = kalman_set_proc_noise_proportionality(&handle, -1.0f);
+
+    // should fail
+    CHECK(!result);
+
+    DOUBLES_EQUAL(
+            handle._process_noise_proportionality,
+            PROC_NOISE_PROP,
+            FLOAT_COMPARE_TOLERANCE);
+}
+
+TEST(KalmanSetProcNoiseProp, normalBehaviour)
+{
+    // precondition after init
+    DOUBLES_EQUAL(
+            handle._process_noise_proportionality,
+            PROC_NOISE_PROP,
+            FLOAT_COMPARE_TOLERANCE);
+
+    float new_prop = 1.0f;
+
+    bool result = kalman_set_proc_noise_proportionality(&handle, new_prop);
+
+    CHECK(result);
+
+    DOUBLES_EQUAL(
+            handle._process_noise_proportionality,
+            new_prop,
+            FLOAT_COMPARE_TOLERANCE);
+}

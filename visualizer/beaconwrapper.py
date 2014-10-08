@@ -42,6 +42,14 @@ UPDATESTATE.argtypes = [
 ]
 UPDATESTATE.restype = None
 
+SET_MAX_ACC = BEACONS.set_max_acc
+SET_MAX_ACC.argtypes = [ctypes.c_float]
+SET_MAX_ACC.restype = None
+
+SET_PROC_NOISE_PROP = BEACONS.set_proc_noise_prop
+SET_PROC_NOISE_PROP.argtypes = [ctypes.c_float]
+SET_PROC_NOISE_PROP.restype = None
+
 def setup(pos_x, pos_y):
     "initialize beacon lib"
     SETUP(pos_x, pos_y)
@@ -54,3 +62,11 @@ def next_state(alpha, beta, gamma, delta_t, use_meas):
     "get next state after kalman update"
     UPDATESTATE(alpha, beta, gamma, delta_t, use_meas)
     return (GETX(), GETY(), GETVARX(), GETVARY(), GETCOVXY())
+
+def set_max_acc(acc):
+    "set max acc of robot"
+    SET_MAX_ACC(acc)
+
+def set_proc_noise_prop(prop):
+    "look at the damn method name >.<"
+    SET_PROC_NOISE_PROP(prop)

@@ -56,6 +56,8 @@ typedef struct {
     robot_state_t _state;
     covariance_t _state_covariance;
     matrix2d_t _measurement_covariance;
+    float _max_acc;
+    float _process_noise_proportionality;
 } kalman_robot_handle_t;
 
 // intializes all fields of 'handle'
@@ -106,5 +108,22 @@ uint8_t kalman_update_measurement_covariance(
         float var_x,
         float var_y,
         float cov_xy);
+
+// set maximum acceleration of the robot associated with handle
+//
+// return 1 if setting was successful
+// return 0 on failure
+uint8_t kalman_set_max_acc(
+        kalman_robot_handle_t * handle,
+        float max_acc);
+
+// set proportionality constant used for deriving the process noise covariance
+// of the robot associated with handle
+//
+// return 1 if setting was sucessful
+// return 0 on failure 
+uint8_t kalman_set_proc_noise_proportionality(
+        kalman_robot_handle_t * handle,
+        float prop);
 
 #endif

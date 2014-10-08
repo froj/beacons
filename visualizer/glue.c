@@ -91,3 +91,13 @@ void update_state(
         kalman_update(&handle, NULL, delta_t, &current);
     }
 }
+
+void set_max_acc(float max_acc)
+{
+    kalman_set_max_acc(&handle, max_acc);
+}
+
+void set_proc_noise_prop(float prop)
+{
+    kalman_set_proc_noise_proportionality(&handle, prop);
+}
