@@ -36,6 +36,12 @@ uint8_t kalman_update_measurement_covariance(
         float var_x,
         float var_y,
         float cov_xy);
+uint8_t kalman_set_max_acc(
+        kalman_robot_handle_t * handle,
+        float max_acc);
+uint8_t kalman_set_proc_noise_proportionality(
+        kalman_robot_handle_t * handle,
+        float prop);
 
 // private function prototypes
 static uint8_t feq(float a, float b);
@@ -64,6 +70,7 @@ static void update_covariance(
         const kalman_gain_t * gain,
         covariance_t * dest);
 static void process_noise_covariance(
+        const kalman_robot_handle_t * handle,
         float delta_t,
         covariance_t * dest);
 
@@ -148,6 +155,12 @@ uint8_t kalman_init(
     handle->_measurement_covariance._c = MEAS_COV_XY;
     handle->_measurement_covariance._d = MEAS_VAR_Y;
 
+    // default max acc of robot
+    handle->_max_acc = MAX_ACC;
+    
+    // default proportionality constant for process noise covariance
+    handle->_process_noise_proportionality = PROC_NOISE_PROP;
+
     os_mutex_release(&(handle->_mutex));
 
     return 1;
@@ -170,7 +183,7 @@ uint8_t kalman_update(
 
     // predict new covariance
     covariance_t proc_noise_cov;
-    process_noise_covariance(delta_t, &proc_noise_cov);
+    process_noise_covariance(handle, delta_t, &proc_noise_cov);
     predict_covariance(
             &(handle->_state_covariance),
             &proc_noise_cov,
@@ -230,6 +243,32 @@ uint8_t kalman_update_measurement_covariance(
     handle->_measurement_covariance._d = var_y;
 
     os_mutex_release(&(handle->_mutex));
+
+    return 1;
+}
+
+uint8_t kalman_set_max_acc(
+        kalman_robot_handle_t * handle,
+        float max_acc)
+{
+    if(handle == NULL || max_acc < 0) {
+        return 0;
+    }
+
+    handle->_max_acc = max_acc;
+
+    return 1;
+}
+
+uint8_t kalman_set_proc_noise_proportionality(
+        kalman_robot_handle_t * handle,
+        float prop)
+{
+    if(handle == NULL || prop < 0) {
+        return 0;
+    }
+
+    handle->_process_noise_proportionality = prop;
 
     return 1;
 }
@@ -353,10 +392,12 @@ static void update_covariance(
 }
 
 static void process_noise_covariance(
+        const kalman_robot_handle_t * handle,
         float delta_t,
         covariance_t * dest)
 {
-    static const float base_factor = 0.0625f * MAX_ACC; // 1/16 * a
+    float base_factor =
+        handle->_process_noise_proportionality * handle->_max_acc;
 
     m_init_identity(&(dest->_cov_a));
     m_init_identity(&(dest->_cov_b));
