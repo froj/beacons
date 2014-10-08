@@ -219,9 +219,10 @@ void communication_main(void *context)
         os_mutex_take(&robot_one_pos_access);
         memcpy(&robot_one_pos_copy, &robot_one_pos, sizeof(robot_pos_t));
         os_mutex_release(&robot_one_pos_access);
-        printf("%d %.3f x: %1.3f, y: %1.3f, var_x: %1.3f, var_y: %1.3f, cov: %1.3f\n\r",
-                updates, time_passed / updates, robot_one_pos_copy.x, robot_one_pos_copy.y,
-                robot_one_pos_copy.var_x, robot_one_pos_copy.var_y, robot_one_pos_copy.cov_xy);
+        printf("x: %1.3f, y: %1.3f, var_x: %1.3f, var_y: %1.3f, cov: %1.3f\n\r",
+                robot_one_pos_copy.x, robot_one_pos_copy.y,
+                robot_one_pos_copy.var_x, robot_one_pos_copy.var_y,
+                robot_one_pos_copy.cov_xy);
     }
 
 }
