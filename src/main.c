@@ -132,7 +132,6 @@ void laser_one_main(void *context)
 {
     (void) context;
 
-    printf("Laser One Thread\n");
 
     while (1) {
 
@@ -140,6 +139,7 @@ void laser_one_main(void *context)
         if(beacon_angles_calculate(&laser_one)){
             os_mutex_take(&laser_one_pos_access);
             os_mutex_take(&laser_one.access);
+            while(os_semaphore_try(&laser_one_pos_ready));
             if(positioning_from_angles(
                         laser_one.alpha,
                         laser_one.gamma,
@@ -219,7 +219,7 @@ void communication_main(void *context)
         os_mutex_take(&robot_one_pos_access);
         memcpy(&robot_one_pos_copy, &robot_one_pos, sizeof(robot_pos_t));
         os_mutex_release(&robot_one_pos_access);
-        printf("x: %1.3f, y: %1.3f, var_x: %1.3f, var_y: %1.3f, cov: %1.3f\n\r",
+        printf("%1.3f %1.3f %1.3f %1.3f %1.3f\n",
                 robot_one_pos_copy.x, robot_one_pos_copy.y,
                 robot_one_pos_copy.var_x, robot_one_pos_copy.var_y,
                 robot_one_pos_copy.cov_xy);

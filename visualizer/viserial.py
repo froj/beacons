@@ -24,7 +24,7 @@ YELLOW = (255, 255, 0)
 CYAN = (0, 255, 255)
 PURPLE = (255, 0, 255)
 
-SER = serial.Serial('/dev/ttyUSB0', 19200)
+SER = serial.Serial('/dev/ttyACM0', 19200)
 
 def get_state():
     line = SER.readline()

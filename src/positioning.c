@@ -135,7 +135,7 @@ static inline float cot(float alpha)
 // helper function to compare floats for approximate equality
 static uint8_t feq(float a, float b)
 {
-    static const float EPSILON = 0.0001f;
+    static const float EPSILON = 0.1f;
     return fabs(a - b) < EPSILON;
 }
 

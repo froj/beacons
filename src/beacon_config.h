@@ -8,8 +8,8 @@
 
 #define KALMAN_TRANS_FREQ    (50)        // [Hz]
 
-#define BEACON_POS_A    {1.5f, 0.5f}    // {[m], [m]}
-#define BEACON_POS_B    {0.0f, 1.0f}    // {[m], [m]}
+#define BEACON_POS_A    {3.0f, 1.0f}    // {[m], [m]}
+#define BEACON_POS_B    {0.0f, 2.0f}    // {[m], [m]}
 #define BEACON_POS_C    {0.0f, 0.0f}    // {[m], [m]}
 
 #define MAX_ACC (1.0f)  // [m/s/s]
