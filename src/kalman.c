@@ -87,7 +87,7 @@ static void m_diff(
         const matrix2d_t * m1,
         const matrix2d_t * m2,
         matrix2d_t * dest);
-static void m_trans(const matrix2d_t * m1, matrix2d_t * dest);
+//static void m_trans(const matrix2d_t * m1, matrix2d_t * dest);
 static uint8_t m_inv(const matrix2d_t * m1, matrix2d_t * dest);
 static void m_scalar_mult(
         float scalar,
@@ -157,7 +157,7 @@ uint8_t kalman_init(
 
     // default max acc of robot
     handle->_max_acc = MAX_ACC;
-    
+
     // default proportionality constant for process noise covariance
     handle->_process_noise_proportionality = PROC_NOISE_PROP;
 
@@ -345,6 +345,8 @@ static void kalman_gain(
     m_add(&(predicted_covariance->_cov_a), measurement_noise_cov, &residual);
     uint8_t inverse_success = m_inv(&residual, &residual);
 
+    if(inverse_success);    // TODO error handling
+
     m_mult(&(predicted_covariance->_cov_a), &residual, &(dest->_k1));
     m_mult(&(predicted_covariance->_cov_c), &residual, &(dest->_k2));
 }
@@ -455,6 +457,7 @@ static void m_diff(
     dest->_d = m1->_d - m2->_d;
 }
 
+/*
 static void m_trans(const matrix2d_t * m1, matrix2d_t * dest)
 {
     // incase m1 == dest
@@ -466,6 +469,7 @@ static void m_trans(const matrix2d_t * m1, matrix2d_t * dest)
     dest->_c = new_c;
     dest->_d = m1->_d;
 }
+*/
 
 static uint8_t m_inv(const matrix2d_t * m1, matrix2d_t * dest)
 {
