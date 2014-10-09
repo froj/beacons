@@ -6,6 +6,7 @@
 #include <libopencm3/stm32/exti.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 
 #include <platform-abstraction/threading.h>
@@ -15,6 +16,9 @@
 
 #include "beacon_angles.h"
 #include "positioning.h"
+#include "kalman.h"
+#include "beacon_config.h"
+
 
 void uart2_init(void)
 {
@@ -107,11 +111,17 @@ void fpu_config(void)
 beacon_angles_t laser_one;
 beacon_angles_t laser_two;
 
-position_t beacon_a = {1.5f, 0.5f};
-position_t beacon_b = {0.0f, 1.0f};
-position_t beacon_c = {0.0f, 0.0f};
+position_t beacon_a = BEACON_POS_A;
+position_t beacon_b = BEACON_POS_B;
+position_t beacon_c = BEACON_POS_C;
 reference_triangle_t table;
+
+robot_pos_t robot_one_pos;
+mutex_t robot_one_pos_access;
+
 position_t laser_one_pos;
+mutex_t laser_one_pos_access;
+semaphore_t laser_one_pos_ready;
 
 os_thread_t laser_one_thread;
 THREAD_STACK laser_one_stack[1024];
@@ -122,26 +132,99 @@ void laser_one_main(void *context)
 {
     (void) context;
 
-    printf("Laser One Thread\n");
 
     while (1) {
 
         os_semaphore_wait(&laser_one.measurement_ready);
         if(beacon_angles_calculate(&laser_one)){
-            gpio_toggle(GPIOB, GPIO13);
+            os_mutex_take(&laser_one_pos_access);
             os_mutex_take(&laser_one.access);
+            while(os_semaphore_try(&laser_one_pos_ready));
             if(positioning_from_angles(
                         laser_one.alpha,
                         laser_one.gamma,
                         laser_one.beta,
                         &table, &laser_one_pos)){
-                printf("x: %f, y: %f\n\r", laser_one_pos.x, laser_one_pos.y);
+                gpio_toggle(GPIOB, GPIO13);
+                os_mutex_release(&laser_one_pos_access);
+                os_mutex_release(&laser_one.access);
+                os_semaphore_signal(&laser_one_pos_ready);
+                //printf("x: %f, y: %f\n\r", laser_one_pos.x, laser_one_pos.y);
+            } else{
+                os_mutex_release(&laser_one_pos_access);
+                os_mutex_release(&laser_one.access);
             }
-            //printf("alpha: %f, beta: %f, gamma: %f\n",
-            //        DEG(laser_one.alpha), DEG(laser_one.beta), DEG(laser_one.gamma));
-            os_mutex_release(&laser_one.access);
+
         }
     }
+}
+
+
+os_thread_t kalman_thread;
+THREAD_STACK kalman_stack[1024];
+
+void kalman_main(void *context)
+{
+    uint32_t timestamp;
+    uint32_t timestamp_diff;
+    uint32_t period;
+    uint32_t wait_time_us;
+    float delta_t;
+    robot_pos_t init_pos;
+    kalman_robot_handle_t handle;
+
+    init_pos.x = KALMAN_INIT_POS_X;
+    init_pos.y = KALMAN_INIT_POS_Y;
+    init_pos.var_x = KALMAN_INIT_POS_VAR;
+    init_pos.var_y = KALMAN_INIT_POS_VAR;
+    init_pos.cov_xy = 0.0f;
+
+    kalman_init(&handle, &init_pos);
+
+    period = 1000000 / KALMAN_TRANS_FREQ;
+
+    timestamp = os_timestamp_get();
+
+    // update loop
+    while(42){
+
+        timestamp_diff = os_timestamp_diff_and_update(&timestamp);
+        wait_time_us = period - timestamp_diff;
+        if(wait_time_us > 0){
+            os_thread_sleep_least_us(wait_time_us);
+        }
+
+        timestamp_diff += os_timestamp_diff_and_update(&timestamp);
+        delta_t = timestamp_diff / 1000000.0f;
+
+        os_mutex_take(&robot_one_pos_access);
+        if(os_semaphore_try(&laser_one_pos_ready)){
+            kalman_update(&handle, &laser_one_pos, delta_t, &robot_one_pos);
+        } else{
+            kalman_update(&handle, NULL, delta_t, &robot_one_pos);
+        }
+        os_mutex_release(&robot_one_pos_access);
+    }
+}
+
+
+os_thread_t communication_thread;
+THREAD_STACK communication_stack[1024];
+
+void communication_main(void *context)
+{
+    robot_pos_t robot_one_pos_copy;
+    while(42){
+        os_thread_sleep_least_us(1000000 / OUTPUT_FREQ);
+        os_mutex_take(&robot_one_pos_access);
+        memcpy(&robot_one_pos_copy, &robot_one_pos, sizeof(robot_pos_t));
+        os_mutex_release(&robot_one_pos_access);
+        printf("%1.3f %1.3f %1.3f %1.3f %1.3f\n",
+                robot_one_pos_copy.x, robot_one_pos_copy.y,
+                robot_one_pos_copy.var_x, robot_one_pos_copy.var_y,
+                robot_one_pos_copy.cov_xy);
+    }
+
 }
 
 int main(void)
@@ -167,10 +250,20 @@ int main(void)
     gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
 
 
+    os_mutex_init(&robot_one_pos_access);
+
+    os_mutex_init(&laser_one_pos_access);
+    os_semaphore_init(&laser_one_pos_ready, 0);
+
+
     os_init();
 
     os_thread_create(&laser_one_thread, laser_one_main, laser_one_stack,
             sizeof(laser_one_stack), "L1", 0, NULL);
+    os_thread_create(&kalman_thread, kalman_main, kalman_stack,
+            sizeof(kalman_stack), "Kalman", 0, NULL);
+    os_thread_create(&communication_thread, communication_main, communication_stack,
+            sizeof(communication_stack), "Communication", 2, NULL);
 
     os_run();
 
