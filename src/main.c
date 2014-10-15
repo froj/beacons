@@ -61,7 +61,6 @@ void exti_irq_init(void)
     exti_set_trigger(EXTI2, EXTI_TRIGGER_RISING);
     exti_select_source(EXTI2, GPIOD);
     nvic_enable_irq(NVIC_EXTI2_TSC_IRQ);
-    /*
     // Setup for PB8 & PB9
     exti_enable_request(EXTI8);
     exti_set_trigger(EXTI8, EXTI_TRIGGER_RISING);
@@ -75,7 +74,7 @@ void exti_irq_init(void)
     exti_set_trigger(EXTI10, EXTI_TRIGGER_RISING);
     exti_select_source(EXTI10, GPIOD);
     nvic_enable_irq(NVIC_EXTI15_10_IRQ);
-    */
+
 
     // We'll also need to read the state of PB8 & PB9
     rcc_periph_clock_enable(RCC_GPIOB);
@@ -108,14 +107,14 @@ void fpu_config(void)
 }
 
 
-beacon_angles_t laser_one;
-beacon_angles_t laser_two;
 
 position_t beacon_a = BEACON_POS_A;
 position_t beacon_b = BEACON_POS_B;
 position_t beacon_c = BEACON_POS_C;
 reference_triangle_t table;
 
+/* declaration of structures for first laser */
+beacon_angles_t laser_one;
 robot_pos_t robot_one_pos;
 mutex_t robot_one_pos_access;
 
@@ -123,10 +122,19 @@ position_t laser_one_pos;
 mutex_t laser_one_pos_access;
 semaphore_t laser_one_pos_ready;
 
+/* declaration of structures for second laser */
+beacon_angles_t laser_two;
+robot_pos_t robot_two_pos;
+mutex_t robot_two_pos_access;
+
+position_t laser_two_pos;
+mutex_t laser_two_pos_access;
+semaphore_t laser_two_pos_ready;
+
+
+/* thread for computing the angles for the first laser */
 os_thread_t laser_one_thread;
 THREAD_STACK laser_one_stack[1024];
-
-#define DEG(X) (X * 180 / 3.14159)
 
 void laser_one_main(void *context)
 {
@@ -149,10 +157,44 @@ void laser_one_main(void *context)
                 os_mutex_release(&laser_one_pos_access);
                 os_mutex_release(&laser_one.access);
                 os_semaphore_signal(&laser_one_pos_ready);
-                //printf("x: %f, y: %f\n\r", laser_one_pos.x, laser_one_pos.y);
             } else{
                 os_mutex_release(&laser_one_pos_access);
                 os_mutex_release(&laser_one.access);
+            }
+
+        }
+    }
+}
+
+
+/* thread for computing the angles for the second laser */
+os_thread_t laser_two_thread;
+THREAD_STACK laser_two_stack[1024];
+
+void laser_two_main(void *context)
+{
+    (void) context;
+
+
+    while (1) {
+
+        os_semaphore_wait(&laser_two.measurement_ready);
+        if(beacon_angles_calculate(&laser_two)){
+            os_mutex_take(&laser_two_pos_access);
+            os_mutex_take(&laser_two.access);
+            while(os_semaphore_try(&laser_two_pos_ready));
+            if(positioning_from_angles(
+                        laser_two.alpha,
+                        laser_two.gamma,
+                        laser_two.beta,
+                        &table, &laser_two_pos)){
+                //gpio_toggle(GPIOB, GPIO13);
+                os_mutex_release(&laser_two_pos_access);
+                os_mutex_release(&laser_two.access);
+                os_semaphore_signal(&laser_two_pos_ready);
+            } else{
+                os_mutex_release(&laser_two_pos_access);
+                os_mutex_release(&laser_two.access);
             }
 
         }
@@ -171,7 +213,8 @@ void kalman_main(void *context)
     uint32_t wait_time_us;
     float delta_t;
     robot_pos_t init_pos;
-    kalman_robot_handle_t handle;
+    kalman_robot_handle_t handle_one;
+    kalman_robot_handle_t handle_two;
 
     init_pos.x = KALMAN_INIT_POS_X;
     init_pos.y = KALMAN_INIT_POS_Y;
@@ -179,7 +222,8 @@ void kalman_main(void *context)
     init_pos.var_y = KALMAN_INIT_POS_VAR;
     init_pos.cov_xy = 0.0f;
 
-    kalman_init(&handle, &init_pos);
+    kalman_init(&handle_one, &init_pos);
+    kalman_init(&handle_two, &init_pos);
 
     period = 1000000 / KALMAN_TRANS_FREQ;
 
@@ -197,13 +241,23 @@ void kalman_main(void *context)
         timestamp_diff += os_timestamp_diff_and_update(&timestamp);
         delta_t = timestamp_diff / 1000000.0f;
 
+        /* kalman update for first laser */
         os_mutex_take(&robot_one_pos_access);
         if(os_semaphore_try(&laser_one_pos_ready)){
-            kalman_update(&handle, &laser_one_pos, delta_t, &robot_one_pos);
+            kalman_update(&handle_one, &laser_one_pos, delta_t, &robot_one_pos);
         } else{
-            kalman_update(&handle, NULL, delta_t, &robot_one_pos);
+            kalman_update(&handle_one, NULL, delta_t, &robot_one_pos);
         }
         os_mutex_release(&robot_one_pos_access);
+
+        /* kalman update for second laser */
+        os_mutex_take(&robot_two_pos_access);
+        if(os_semaphore_try(&laser_two_pos_ready)){
+            kalman_update(&handle_two, &laser_two_pos, delta_t, &robot_two_pos);
+        } else{
+            kalman_update(&handle_two, NULL, delta_t, &robot_two_pos);
+        }
+        os_mutex_release(&robot_two_pos_access);
     }
 }
 
@@ -214,15 +268,24 @@ THREAD_STACK communication_stack[1024];
 void communication_main(void *context)
 {
     robot_pos_t robot_one_pos_copy;
+    robot_pos_t robot_two_pos_copy;
     while(42){
         os_thread_sleep_least_us(1000000 / OUTPUT_FREQ);
         os_mutex_take(&robot_one_pos_access);
         memcpy(&robot_one_pos_copy, &robot_one_pos, sizeof(robot_pos_t));
         os_mutex_release(&robot_one_pos_access);
-        printf("%1.3f %1.3f %1.3f %1.3f %1.3f\n",
+        printf("1: %1.3f %1.3f %1.3f %1.3f %1.3f\n",
                 robot_one_pos_copy.x, robot_one_pos_copy.y,
                 robot_one_pos_copy.var_x, robot_one_pos_copy.var_y,
                 robot_one_pos_copy.cov_xy);
+
+        os_mutex_take(&robot_two_pos_access);
+        memcpy(&robot_two_pos_copy, &robot_two_pos, sizeof(robot_pos_t));
+        os_mutex_release(&robot_two_pos_access);
+        printf("2: %1.3f %1.3f %1.3f %1.3f %1.3f\n",
+                robot_two_pos_copy.x, robot_two_pos_copy.y,
+                robot_two_pos_copy.var_x, robot_two_pos_copy.var_y,
+                robot_two_pos_copy.cov_xy);
     }
 
 }
@@ -251,15 +314,20 @@ int main(void)
 
 
     os_mutex_init(&robot_one_pos_access);
-
     os_mutex_init(&laser_one_pos_access);
     os_semaphore_init(&laser_one_pos_ready, 0);
+
+    os_mutex_init(&robot_two_pos_access);
+    os_mutex_init(&laser_two_pos_access);
+    os_semaphore_init(&laser_two_pos_ready, 0);
 
 
     os_init();
 
     os_thread_create(&laser_one_thread, laser_one_main, laser_one_stack,
             sizeof(laser_one_stack), "L1", 0, NULL);
+    os_thread_create(&laser_two_thread, laser_two_main, laser_two_stack,
+            sizeof(laser_two_stack), "L2", 0, NULL);
     os_thread_create(&kalman_thread, kalman_main, kalman_stack,
             sizeof(kalman_stack), "Kalman", 0, NULL);
     os_thread_create(&communication_thread, communication_main, communication_stack,
