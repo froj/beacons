@@ -134,7 +134,7 @@ semaphore_t laser_two_pos_ready;
 
 /* thread for computing the angles for the first laser */
 os_thread_t laser_one_thread;
-THREAD_STACK laser_one_stack[1024];
+THREAD_STACK laser_one_stack[512];
 
 void laser_one_main(void *context)
 {
@@ -169,7 +169,7 @@ void laser_one_main(void *context)
 
 /* thread for computing the angles for the second laser */
 os_thread_t laser_two_thread;
-THREAD_STACK laser_two_stack[1024];
+THREAD_STACK laser_two_stack[512];
 
 void laser_two_main(void *context)
 {
@@ -203,7 +203,7 @@ void laser_two_main(void *context)
 
 
 os_thread_t kalman_thread;
-THREAD_STACK kalman_stack[1024];
+THREAD_STACK kalman_stack[512];
 
 void kalman_main(void *context)
 {
@@ -263,7 +263,7 @@ void kalman_main(void *context)
 
 
 os_thread_t communication_thread;
-THREAD_STACK communication_stack[1024];
+THREAD_STACK communication_stack[600];
 
 void communication_main(void *context)
 {
