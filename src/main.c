@@ -41,6 +41,27 @@ void uart2_init(void)
     usart_enable(USART2);
 }
 
+void uart1_init(void)
+{
+    rcc_periph_clock_enable(RCC_GPIOC);
+    // uart tx pin
+    gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO4);
+    gpio_set_af(GPIOC, GPIO_AF7, GPIO4);
+    // uart rx pin
+    gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO5);
+    gpio_set_output_options(GPIOC, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO5);
+    gpio_set_af(GPIOC, GPIO_AF7, GPIO5);
+
+    rcc_periph_clock_enable(RCC_USART1);
+    usart_set_baudrate(USART1, 2*9600);
+    usart_set_databits(USART1, 8);
+    usart_set_stopbits(USART1, USART_STOPBITS_1);
+    usart_set_mode(USART1, USART_MODE_TX_RX);
+    usart_set_parity(USART1, USART_PARITY_NONE);
+    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+    usart_enable(USART1);
+}
+
 void exti_irq_init(void)
 {
     // SYSCFG clock is needed for EXTI
@@ -234,6 +255,7 @@ int main(void)
     fpu_config();
 
     uart2_init();
+    uart1_init();
 
     beacon_angles_init(&laser_one);
     beacon_angles_init(&laser_two);

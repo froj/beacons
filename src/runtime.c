@@ -20,8 +20,8 @@ struct {
     const file_ops_t *ops;
     void *file;
 } fd_list[FILE_DESC_TABLE_SIZE] = {
-    {.ops = &uart_ops, .file = (void *)USART2}, // stdin
-    {.ops = &uart_ops, .file = (void *)USART2}, // stdout
+    {.ops = &uart_ops, .file = (void *)USART1}, // stdin
+    {.ops = &uart_ops, .file = (void *)USART1}, // stdout
     {.ops = &uart_ops, .file = (void *)USART2}  // stderr
 };
 
