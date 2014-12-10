@@ -10,13 +10,14 @@ PRINT = @printf "$(COLOR)%s$(COLOR_CLEAR)\n"
 
 {% block cflags %}
 INCDIR += -I./dependencies/CMSIS/include
-INCDIR += -I./dependencies/libopencm3/include
+INCDIR += -I./libopencm3/include
 INCDIR += -I./dependencies/uCOS-III/Source
 INCDIR += -I./dependencies/uCOS-III/Port
 INCDIR += -I./dependencies/uCOS-III/Cfg
+INCDIR += -I./dependencies/serializer
 
 # C compiler flags
-CFLAGS = -Wall -Werror -Os
+CFLAGS = -Wall -Os
 CFLAGS += -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS += -fno-common -ffunction-sections -fdata-sections -fomit-frame-pointer
 CFLAGS += -MD -DSTM32F3 -DCPU_CFG_CPU_CORE_FREQ=64000000 -g
@@ -35,7 +36,7 @@ LDFLAGS += -Tlinkerscript.ld
 LDFLAGS += -lc -lnosys
 LDFLAGS	+= -L./libopencm3/lib
 LDFLAGS	+= -L./CMSIS/lib/
-LDFLAGS	+= -lopencm3_stm32f3
+#LDFLAGS	+= -lopencm3_stm32f3
 #LDFLAGS	+= -larm_cortexM4lf_math
 {% endblock %}
 
