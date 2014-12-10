@@ -36,7 +36,7 @@ LDFLAGS += -Tlinkerscript.ld
 LDFLAGS += -lc -lnosys
 LDFLAGS	+= -L./libopencm3/lib
 LDFLAGS	+= -L./CMSIS/lib/
-#LDFLAGS	+= -lopencm3_stm32f3
+LDFLAGS	+= -lopencm3_stm32f3
 #LDFLAGS	+= -larm_cortexM4lf_math
 {% endblock %}
 
